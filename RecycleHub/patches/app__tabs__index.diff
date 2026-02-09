@@ -1,0 +1,22 @@
+Change: app/(tabs)/index.tsx
+
+--- before (excerpt)
+import { Image } from 'expo-image';
+import { Platform, StyleSheet } from 'react-native';
+
+import { HelloWave } from '@/components/hello-wave';
+import ParallaxScrollView from '@/components/parallax-scroll-view';
+
+--- after
+import React from 'react';
+import { View, StyleSheet } from 'react-native';
+
+export default function HomeScreen() {
+  return <View style={styles.container} />;
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#ffffff' },
+});
+
+Description: Replaced the starter UI and parallax scroll content with a minimal component that renders a full-screen white background so the app shows a blank white page.
