@@ -3,10 +3,12 @@ import React from 'react';
 import { Text, View } from 'react-native';
 
 import { HapticTab } from '@/components/haptic-tab';
+import { useCart } from '@/context/CartContext';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  const { cartCount } = useCart();
 
   return (
     <Tabs
@@ -68,6 +70,33 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => (
             <View style={{ alignItems: 'center' }}>
               <Text style={{ fontSize: 24 }}>🛒</Text>
+              {cartCount > 0 && (
+                <View
+                  style={{
+                    position: 'absolute',
+                    top: -4,
+                    right: -8,
+                    backgroundColor: '#EF4444',
+                    borderRadius: 10,
+                    minWidth: 20,
+                    height: 20,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    paddingHorizontal: 6,
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: '#FFFFFF',
+                      fontSize: 12,
+                      fontWeight: 'bold',
+                      fontFamily: 'Poppins',
+                    }}
+                  >
+                    {cartCount > 99 ? '99+' : cartCount}
+                  </Text>
+                </View>
+              )}
             </View>
           ),
         }}

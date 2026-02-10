@@ -1,3 +1,4 @@
+import { useCart } from '@/context/CartContext';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
@@ -24,6 +25,7 @@ const products: Product[] = [
 
 export default function ShopScreen() {
   const router = useRouter();
+  const { addToCart } = useCart();
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#F9FAFB' }} edges={['top', 'bottom']}>
@@ -56,7 +58,7 @@ export default function ShopScreen() {
                 elevation: 2,
               }}
               onPress={() => {
-                // TODO: Navigate to product details
+                // Navigate to product details
                 console.log('Product pressed:', product.name);
               }}
             >
@@ -94,8 +96,7 @@ export default function ShopScreen() {
                   marginTop: 12,
                 }}
                 onPress={() => {
-                  // TODO: Add to cart
-                  console.log('Add to cart:', product.name);
+                  addToCart(product);
                 }}
               >
                 <Text style={{ color: '#FFFFFF', fontWeight: '600', fontFamily: 'Poppins', fontSize: 12 }}>
