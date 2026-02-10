@@ -17,7 +17,7 @@ export default function TabLayout() {
         tabBarButton: (props) => <HapticTab {...props} />,
         tabBarStyle: {
           position: 'absolute',
-          bottom: 8
+          bottom: 8,
           left: 8,
           right: 8,
           height: 60,
