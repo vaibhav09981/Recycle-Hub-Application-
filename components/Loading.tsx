@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
 
 interface LoadingProps {
   onLoadingComplete: () => void;
@@ -25,7 +26,20 @@ export default function Loading({ onLoadingComplete }: LoadingProps) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>LOADING... ({percentage}%)</Text>
+      {/* App Logo */}
+      <Image
+        source={require('@/assets/recyclehub_icon.png')}
+        style={styles.logo}
+        contentFit="contain"
+      />
+      
+      {/* Loading Animation */}
+      <View style={styles.loadingContainer}>
+        <View style={styles.progressBarBackground}>
+          <View style={[styles.progressBarFill, { width: `${percentage}%` }]} />
+        </View>
+        <Text style={styles.text}>Loading... {percentage}%</Text>
+      </View>
     </View>
   );
 }
@@ -37,8 +51,31 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#ffffff',
   },
+  logo: {
+    width: 100,
+    height: 100,
+    marginBottom: 40,
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    width: '80%',
+  },
+  progressBarBackground: {
+    width: '100%',
+    height: 6,
+    backgroundColor: '#E5E7EB',
+    borderRadius: 3,
+    marginBottom: 16,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: '#10B981',
+    borderRadius: 3,
+  },
   text: {
-    fontSize: 24,
-    color: '#000000',
+    fontSize: 14,
+    color: '#6B7280',
+    fontFamily: 'Poppins',
   },
 });
