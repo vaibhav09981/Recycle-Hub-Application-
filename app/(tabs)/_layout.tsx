@@ -16,6 +16,7 @@ export default function TabLayout() {
         tabBarActiveTintColor: '#10B981',
         tabBarInactiveTintColor: '#9CA3AF',
         headerShown: false,
+
         tabBarButton: (props) => <HapticTab {...props} />,
         tabBarStyle: {
           position: 'absolute',
@@ -39,6 +40,10 @@ export default function TabLayout() {
           fontFamily: 'Poppins',
           fontSize: 10,
           fontWeight: '500',
+        tabBarButton: HapticTab,
+        tabBarStyle: {
+          display: 'none', // Hide default tab bar, we have custom one
+
         },
       }}>
       <Tabs.Screen
@@ -110,6 +115,20 @@ export default function TabLayout() {
               <Text style={{ fontSize: 24 }}>👤</Text>
             </View>
           ),
+        }}
+      />
+      <Tabs.Screen
+        name="cart"
+        options={{
+          title: 'Cart',
+          tabBarIcon: ({ color }) => <Text className="text-2xl">🛒</Text>,
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Profile',
+          tabBarIcon: ({ color }) => <Text className="text-2xl">👤</Text>,
         }}
       />
     </Tabs>
