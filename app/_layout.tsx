@@ -6,6 +6,7 @@ import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
+import { CartProvider } from '@/context/CartContext';
 import Loading from '@/components/Loading';
 
 export const unstable_settings = {
@@ -41,7 +42,9 @@ function RootNavigator() {
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <RootNavigator />
+      <CartProvider>
+        <RootNavigator />
+      </CartProvider>
     </AuthProvider>
   );
 }
