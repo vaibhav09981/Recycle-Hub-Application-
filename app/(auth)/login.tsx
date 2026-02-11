@@ -4,6 +4,7 @@ import { Link, router } from 'expo-router';
 import React, { useState } from 'react';
 import {
     Alert,
+    Image,
     KeyboardAvoidingView,
     Platform,
     StyleSheet,
@@ -32,7 +33,7 @@ export default function LoginScreen() {
     if (error) {
       Alert.alert('Login Failed', error.message || 'Invalid credentials');
     } else {
-      router.replace('/(tabs)/');
+      router.replace('/' as any);
     }
   };
 
@@ -43,8 +44,15 @@ export default function LoginScreen() {
     >
       <View style={styles.content}>
         <View style={styles.logoContainer}>
-          <Text style={styles.logoText}>♻️</Text>
-          <Text style={styles.title}>RecycleHub</Text>
+          <Image 
+            source={require('@/assets/recyclehub_icon.png')}
+            style={styles.logoImage}
+            resizeMode="contain"
+          />
+          <View style={styles.titleRow}>
+            <Text style={styles.titleRecycle}>Recycle</Text>
+            <Text style={styles.titleHub}>Hub</Text>
+          </View>
           <Text style={styles.subtitle}>Welcome back! Login to continue.</Text>
         </View>
 
@@ -81,7 +89,7 @@ export default function LoginScreen() {
           </TouchableOpacity>
 
           <View style={styles.footer}>
-            <Text style={styles.footerText}>Don't have an account? </Text>
+            <Text style={styles.footerText}>Don&apos;t have an account? </Text>
             <Link href="/(auth)/signup" asChild>
               <TouchableOpacity>
                 <Text style={styles.linkText}>Sign Up</Text>
@@ -106,10 +114,11 @@ const styles = StyleSheet.create({
   },
   logoContainer: {
     alignItems: 'center',
-    marginBottom: 40,
+    marginBottom: 32,
   },
-  logoText: {
-    fontSize: 64,
+  logoImage: {
+    width: 100,
+    height: 100,
     marginBottom: 8,
   },
   title: {
@@ -117,6 +126,21 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: Colors.light.primary,
     marginBottom: 8,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  titleRecycle: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#10B981',
+  },
+  titleHub: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#000000',
   },
   subtitle: {
     fontSize: 16,

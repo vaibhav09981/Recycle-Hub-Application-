@@ -4,6 +4,7 @@ import React, { createContext, ReactNode, useContext, useEffect, useState } from
 interface User {
   id: string;
   email: string;
+  name: string;
   created_at: string;
 }
 
@@ -31,6 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser({
           id: session.user.id,
           email: session.user.email || '',
+          name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User',
           created_at: session.user.created_at || '',
         });
       }
@@ -44,6 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser({
           id: session.user.id,
           email: session.user.email || '',
+          name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User',
           created_at: session.user.created_at || '',
         });
       } else {
