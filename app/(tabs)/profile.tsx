@@ -111,12 +111,19 @@ export default function ProfileScreen() {
   const { user, session, signOut } = useAuth();
   const { totalFootprint, totalSavings, carbonHistory } = useCarbon();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'impact' | 'badges' | 'history'>('impact');
 
+  const [activeTab, setActiveTab] = useState<'impact' | 'badges' | 'history'>('impact');
+import { router } from 'expo-router';
+import React from 'react';
+import { SafeAreaView, StatusBar, Text, TouchableOpacity, View } from 'react-native';
+
+export default function ProfileScreen() {
+  const { signOut, user } = useAuth();
   const handleLogout = async () => {
     await signOut();
     router.replace('/(auth)/login');
   };
+
 
   // Calculate real impact data from CarbonContext
   const itemsRecycled = carbonHistory.filter((entry) => entry.type === 'savings').length;
@@ -145,6 +152,8 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#F9FAFB' }} edges={['top', 'bottom']}>
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>My Impact</Text>
@@ -354,9 +363,9 @@ export default function ProfileScreen() {
             </View>
           </View>
         )}
-
-        {/* Logout Button */}
         <View style={styles.logoutContainer}>
+
+        <View style={{ padding: 16, paddingBottom: 32 }}>
           <TouchableOpacity
             style={styles.logoutButton}
             onPress={handleLogout}
@@ -369,6 +378,44 @@ export default function ProfileScreen() {
         {/* Bottom Spacer */}
         <View style={styles.bottomSpacer} />
       </ScrollView>
+        <TouchableOpacity
+          style={{ 
+            backgroundColor: '#EF4444', 
+            paddingVertical: 16, 
+            borderRadius: 12,
+            alignItems: 'center'
+          }}
+          onPress={handleLogout}
+        >
+          <Text style={{ color: '#FFFFFF', fontWeight: '600', fontFamily: 'Poppins' }}>
+            Logout
+          </Text>
+    <SafeAreaView className="flex-1 bg-gray-50">
+      <StatusBar barStyle="dark-content" />
+      <View className="flex-1 px-4 pt-6">
+        <Text className="text-2xl font-bold text-gray-900 mb-6 font-poppins">Profile</Text>
+        
+        <View className="bg-white rounded-2xl p-4 mb-4">
+          <View className="flex-row items-center mb-4">
+            <View className="w-16 h-16 bg-emerald-100 rounded-full items-center justify-center">
+              <Text className="text-2xl">👤</Text>
+            </View>
+            <View className="ml-4">
+              <Text className="text-lg font-semibold text-gray-900 font-poppins">
+                {user?.email || 'User'}
+              </Text>
+              <Text className="text-gray-500 font-poppins">View Profile</Text>
+            </View>
+          </View>
+        </View>
+
+        <TouchableOpacity
+          className="bg-red-500 py-4 rounded-xl items-center mt-auto mb-6"
+          onPress={handleLogout}
+        >
+          <Text className="text-white font-semibold font-poppins">Logout</Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 }
