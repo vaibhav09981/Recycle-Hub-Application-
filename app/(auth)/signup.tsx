@@ -4,6 +4,7 @@ import { Link, router } from 'expo-router';
 import React, { useState } from 'react';
 import {
     Alert,
+    Image,
     KeyboardAvoidingView,
     Platform,
     StyleSheet,
@@ -45,7 +46,7 @@ export default function SignupScreen() {
       Alert.alert('Signup Failed', error.message || 'Something went wrong');
     } else {
       Alert.alert('Success', 'Account created successfully! Please check your email to verify.');
-      router.replace('/(tabs)/');
+      router.replace('/' as any);
     }
   };
 
@@ -64,8 +65,15 @@ export default function SignupScreen() {
         </View>
 
         <View style={styles.logoContainer}>
-          <Text style={styles.logoText}>♻️</Text>
-          <Text style={styles.title}>Create Account</Text>
+          <Image 
+            source={require('@/assets/recyclehub_icon.png')}
+            style={styles.logoImage}
+            resizeMode="contain"
+          />
+          <View style={styles.titleRow}>
+            <Text style={styles.titleRecycle}>Recycle</Text>
+            <Text style={styles.titleHub}>Hub</Text>
+          </View>
           <Text style={styles.subtitle}>Join RecycleHub and start recycling!</Text>
         </View>
 
@@ -157,10 +165,11 @@ const styles = StyleSheet.create({
   },
   logoContainer: {
     alignItems: 'center',
-    marginBottom: 32,
+    marginBottom: 24,
   },
-  logoText: {
-    fontSize: 56,
+  logoImage: {
+    width: 80,
+    height: 80,
     marginBottom: 8,
   },
   title: {
@@ -168,6 +177,21 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: Colors.light.primary,
     marginBottom: 8,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  titleRecycle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#10B981',
+  },
+  titleHub: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#000000',
   },
   subtitle: {
     fontSize: 14,

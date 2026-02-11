@@ -1,8 +1,30 @@
 import { useAuth } from '@/context/AuthContext';
+import { useCarbon } from '@/context/CarbonContext';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, Text, TouchableOpacity, View, StyleSheet, Animated, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+// Colors from UI/UX Guide
+const COLORS = {
+  primary: '#10B981',
+  primaryDark: '#047857',
+  primaryLight: '#D1FAE5',
+  background: '#F9FAFB',
+  card: '#FFFFFF',
+  textPrimary: '#1F2937',
+  textSecondary: '#6B7280',
+  textTertiary: '#9CA3AF',
+  border: '#E5E7EB',
+  warning: '#F59E0B',
+  error: '#EF4444',
+  success: '#22C55E',
+  info: '#3B82F6',
+  carbon: '#059669',
+  water: '#0EA5E9',
+  energy: '#FBBF24',
+  points: '#EC4899',
+};
 
 interface Badge {
   id: string;
@@ -39,8 +61,55 @@ const monthlyData: MonthlyData[] = [
   { month: 'Jun', co2Saved: 15.3, itemsScanned: 28 },
 ];
 
+// Progress Ring Component
+function ProgressRing({ progress, color, size = 80, strokeWidth = 8 }: { progress: number; color: string; size?: number; strokeWidth?: number }) {
+  const radius = (size - strokeWidth) / 2;
+  const circumference = radius * 2 * Math.PI;
+  const strokeDashoffset = circumference - (progress / 100) * circumference;
+
+  return (
+    <View style={{ width: size, height: size, transform: [{ rotate: '-90deg' }] }}>
+      <View style={{ width: size, height: size, borderRadius: size / 2, borderWidth: strokeWidth, borderColor: '#E5E7EB' }}>
+        <Animated.View
+          style={{
+            width: '100%',
+            height: '100%',
+            borderRadius: size / 2,
+            borderWidth: strokeWidth,
+            borderColor: color,
+            borderTopColor: 'transparent',
+            borderRightColor: 'transparent',
+            borderBottomColor: 'transparent',
+            transform: [{ rotate: '0deg' }],
+          }}
+        />
+      </View>
+      <View style={[StyleSheet.absoluteFill, { justifyContent: 'center', alignItems: 'center', transform: [{ rotate: '90deg' }] }]}>
+        <View
+          style={{
+            width: size - strokeWidth * 2,
+            height: size - strokeWidth * 2,
+            borderRadius: (size - strokeWidth * 2) / 2,
+            borderWidth: strokeWidth,
+            borderColor: 'transparent',
+            borderTopColor: color,
+            borderLeftColor: color,
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+        >
+          <Animated.Text style={{ fontSize: 14, fontWeight: '700', color: COLORS.textPrimary }}>
+            {Math.round(progress)}%
+          </Animated.Text>
+        </View>
+      </View>
+    </View>
+  );
+}
+
 export default function ProfileScreen() {
-  const { session, signOut } = useAuth();
+  const { user, session, signOut } = useAuth();
+  const { totalFootprint, totalSavings, carbonHistory } = useCarbon();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'impact' | 'badges' | 'history'>('impact');
 
@@ -49,90 +118,84 @@ export default function ProfileScreen() {
     router.replace('/(auth)/login');
   };
 
-  // Mock user impact data
+  // Calculate real impact data from CarbonContext
+  const itemsRecycled = carbonHistory.filter((entry) => entry.type === 'savings').length;
+  const co2Saved = totalSavings; // kg CO2 saved
+  const carbonFootprint = totalFootprint; // kg CO2 footprint
+  const greenPoints = Math.round(totalSavings * 10); // 10 points per kg saved
+
   const userImpact = {
-    totalCo2Saved: 49.4, // kg
-    totalWaterSaved: 210, // L
-    totalEnergySaved: 7.2, // kWh
-    totalItemsScanned: 90,
-    totalItemsRecycled: 75,
-    greenPoints: 485,
-    level: 'Eco Warrior',
-    nextLevelPoints: 500,
+    totalCo2Saved: co2Saved,
+    totalWaterSaved: 210,
+    totalEnergySaved: 7.2,
+    totalItemsScanned: carbonHistory.length,
+    totalItemsRecycled: itemsRecycled,
+    greenPoints: greenPoints,
+    level: greenPoints >= 500 ? 'Green Champion' : greenPoints >= 200 ? 'Eco Warrior' : 'Beginner',
+    nextLevelPoints: greenPoints >= 500 ? 1000 : greenPoints >= 200 ? 500 : 200,
   };
 
   const getProgressWidth = () => {
     const progress = (userImpact.greenPoints / userImpact.nextLevelPoints) * 100;
-    return `${Math.min(progress, 100)}%`;
+    return Math.min(progress, 100);
   };
 
+  const recyclingRate = ((userImpact.totalItemsRecycled / userImpact.totalItemsScanned) * 100).toFixed(0);
+  const badgesEarned = badges.filter(b => b.earned).length;
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#F9FAFB' }} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       {/* Header */}
-      <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12, backgroundColor: '#FFFFFF' }}>
-        <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#111827', fontFamily: 'Poppins' }}>
-          My Impact
-        </Text>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>My Impact</Text>
       </View>
 
-      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* Profile Header */}
-        <View style={{ backgroundColor: '#FFFFFF', paddingHorizontal: 16, paddingBottom: 20 }}>
+        <View style={styles.profileHeader}>
           {/* Avatar */}
-          <View style={{ alignItems: 'center', marginBottom: 20 }}>
-            <View style={{ 
-              width: 90, 
-              height: 90, 
-              borderRadius: 45, 
-              backgroundColor: '#10B981', 
-              justifyContent: 'center', 
-              alignItems: 'center',
-              marginBottom: 12,
-              borderWidth: 4,
-              borderColor: '#F0FDF4',
-            }}>
-              <Text style={{ fontSize: 36, color: '#FFFFFF', fontWeight: 'bold' }}>
+          <View style={styles.avatarContainer}>
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>
                 {session?.user?.email?.charAt(0).toUpperCase() || 'U'}
               </Text>
             </View>
-            <Text style={{ fontSize: 20, fontWeight: '700', color: '#111827', fontFamily: 'Poppins' }}>
-              {session?.user?.email?.split('@')[0] || 'Eco Hero'}
-            </Text>
-            <View style={{ backgroundColor: '#10B981', paddingHorizontal: 16, paddingVertical: 4, borderRadius: 20, marginTop: 8 }}>
-              <Text style={{ color: '#FFFFFF', fontSize: 12, fontWeight: '600', fontFamily: 'Poppins' }}>
-                {userImpact.level}
-              </Text>
+            <View style={styles.levelBadge}>
+              <Text style={styles.levelBadgeText}>{userImpact.level}</Text>
             </View>
           </View>
 
+          <Text style={styles.userName}>
+            {user?.name || session?.user?.email?.split('@')[0] || 'Eco Hero'}
+          </Text>
+
           {/* Green Points Progress */}
-          <View style={{ backgroundColor: '#F9FAFB', borderRadius: 16, padding: 16, marginBottom: 16 }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Text style={{ fontSize: 20, marginRight: 8 }}>⭐</Text>
-                <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#111827', fontFamily: 'Poppins' }}>
-                  {userImpact.greenPoints}
-                </Text>
+          <View style={styles.pointsCard}>
+            <View style={styles.pointsHeader}>
+              <View style={styles.pointsIconRow}>
+                <Text style={styles.pointsIcon}>⭐</Text>
+                <Text style={styles.pointsValue}>{userImpact.greenPoints}</Text>
               </View>
-              <Text style={{ fontSize: 12, color: '#6B7280', fontFamily: 'Poppins' }}>
+              <Text style={styles.pointsRemaining}>
                 {userImpact.nextLevelPoints - userImpact.greenPoints} points to next level
               </Text>
             </View>
-            <View style={{ height: 12, backgroundColor: '#E5E7EB', borderRadius: 6, overflow: 'hidden' }}>
-              <View style={{ width: getProgressWidth() as any, height: '100%', backgroundColor: '#F59E0B', borderRadius: 6 }} />
+            <View style={styles.progressBar}>
+              <View style={{ ...styles.progressFill, width: `${getProgressWidth()}%` as `${number}%` }} />
             </View>
           </View>
         </View>
 
         {/* Tab Navigation */}
-        <View style={{ flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: '#F3F4F6' }}>
+        <View style={styles.tabContainer}>
           {(['impact', 'badges', 'history'] as const).map((tab) => (
             <TouchableOpacity
               key={tab}
-              style={{ flex: 1, paddingVertical: 8, alignItems: 'center', borderRadius: 8, backgroundColor: activeTab === tab ? '#10B981' : '#F3F4F6' }}
+              style={[styles.tab, activeTab === tab && styles.tabActive]}
               onPress={() => setActiveTab(tab)}
+              activeOpacity={0.8}
             >
-              <Text style={{ color: activeTab === tab ? '#FFFFFF' : '#374151', fontWeight: '600', fontSize: 13, fontFamily: 'Poppins', textTransform: 'capitalize' }}>
+              <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
                 {tab === 'impact' ? '📊 Impact' : tab === 'badges' ? '🏅 Badges' : '📜 History'}
               </Text>
             </TouchableOpacity>
@@ -141,72 +204,80 @@ export default function ProfileScreen() {
 
         {/* Tab Content */}
         {activeTab === 'impact' && (
-          <View style={{ padding: 16 }}>
+          <View style={styles.tabContent}>
+            {/* Environmental Impact Section */}
+            <Text style={styles.sectionTitle}>🌱 Environmental Impact</Text>
+            
             {/* Impact Stats Grid */}
-            <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#111827', fontFamily: 'Poppins', marginBottom: 12 }}>
-              🌱 Environmental Impact
-            </Text>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 24 }}>
-              <View style={{ width: '47%', backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2 }}>
-                <Text style={{ fontSize: 28, marginBottom: 8 }}>🌍</Text>
-                <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#10B981', fontFamily: 'Poppins' }}>
-                  {userImpact.totalCo2Saved} kg
-                </Text>
-                <Text style={{ fontSize: 12, color: '#6B7280', fontFamily: 'Poppins' }}>
-                  CO₂ Emissions Saved
-                </Text>
+            <View style={styles.impactGrid}>
+              {/* CO2 Saved */}
+              <View style={styles.impactCard}>
+                <View style={[styles.impactIconContainer, { backgroundColor: COLORS.primaryLight }]}>
+                  <Text style={styles.impactIcon}>🌍</Text>
+                </View>
+                <Text style={styles.impactValue}>{userImpact.totalCo2Saved.toFixed(1)} kg</Text>
+                <Text style={styles.impactLabel}>CO₂ Saved</Text>
               </View>
-              
-              <View style={{ width: '47%', backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2 }}>
-                <Text style={{ fontSize: 28, marginBottom: 8 }}>💧</Text>
-                <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#3B82F6', fontFamily: 'Poppins' }}>
-                  {userImpact.totalWaterSaved}L
-                </Text>
-                <Text style={{ fontSize: 12, color: '#6B7280', fontFamily: 'Poppins' }}>
-                  Water Saved
-                </Text>
+
+              {/* Water Saved */}
+              <View style={styles.impactCard}>
+                <View style={[styles.impactIconContainer, { backgroundColor: '#EFF6FF' }]}>
+                  <Text style={styles.impactIcon}>💧</Text>
+                </View>
+                <Text style={styles.impactValueWater}>{userImpact.totalWaterSaved}L</Text>
+                <Text style={styles.impactLabel}>Water Saved</Text>
               </View>
-              
-              <View style={{ width: '47%', backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2 }}>
-                <Text style={{ fontSize: 28, marginBottom: 8 }}>⚡</Text>
-                <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#F59E0B', fontFamily: 'Poppins' }}>
-                  {userImpact.totalEnergySaved}kWh
-                </Text>
-                <Text style={{ fontSize: 12, color: '#6B7280', fontFamily: 'Poppins' }}>
-                  Energy Saved
-                </Text>
+
+              {/* Energy Saved */}
+              <View style={styles.impactCard}>
+                <View style={[styles.impactIconContainer, { backgroundColor: '#FEF3C7' }]}>
+                  <Text style={styles.impactIcon}>⚡</Text>
+                </View>
+                <Text style={styles.impactValueEnergy}>{userImpact.totalEnergySaved}kWh</Text>
+                <Text style={styles.impactLabel}>Energy Saved</Text>
               </View>
-              
-              <View style={{ width: '47%', backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2 }}>
-                <Text style={{ fontSize: 28, marginBottom: 8 }}>♻️</Text>
-                <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#10B981', fontFamily: 'Poppins' }}>
-                  {userImpact.totalItemsRecycled}
-                </Text>
-                <Text style={{ fontSize: 12, color: '#6B7280', fontFamily: 'Poppins' }}>
-                  Items Recycled
-                </Text>
+
+              {/* Items Recycled */}
+              <View style={styles.impactCard}>
+                <View style={[styles.impactIconContainer, { backgroundColor: COLORS.primaryLight }]}>
+                  <Text style={styles.impactIcon}>♻️</Text>
+                </View>
+                <Text style={styles.impactValue}>{userImpact.totalItemsRecycled}</Text>
+                <Text style={styles.impactLabel}>Items Recycled</Text>
+              </View>
+            </View>
+
+            {/* Progress Rings */}
+            <View style={styles.progressSection}>
+              <Text style={styles.sectionTitle}>📈 Monthly Progress</Text>
+              <View style={styles.progressCards}>
+                <View style={styles.progressCard}>
+                  <ProgressRing progress={parseFloat(recyclingRate as string)} color={COLORS.primary} />
+                  <Text style={styles.progressCardTitle}>Recycling Rate</Text>
+                  <Text style={styles.progressCardSubtitle}>{recyclingRate}% of items recycled</Text>
+                </View>
+                <View style={styles.progressCard}>
+                  <ProgressRing progress={parseFloat(((badgesEarned / badges.length) * 100).toFixed(0))} color={COLORS.warning} />
+                  <Text style={styles.progressCardTitle}>Badges Earned</Text>
+                  <Text style={styles.progressCardSubtitle}>{badgesEarned}/{badges.length} badges unlocked</Text>
+                </View>
               </View>
             </View>
 
             {/* Monthly Chart */}
-            <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#111827', fontFamily: 'Poppins', marginBottom: 12 }}>
-              📈 Monthly Progress
-            </Text>
-            <View style={{ backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2 }}>
-              {/* Simple Bar Chart */}
-              <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', height: 120, paddingVertical: 12 }}>
+            <View style={styles.chartCard}>
+              <Text style={styles.chartTitle}>CO₂ Saved This Year</Text>
+              <View style={styles.chartContainer}>
                 {monthlyData.map((data, index) => {
                   const maxCo2 = Math.max(...monthlyData.map(d => d.co2Saved));
                   const height = (data.co2Saved / maxCo2) * 80;
                   return (
-                    <View key={index} style={{ alignItems: 'center', flex: 1 }}>
-                      <Text style={{ fontSize: 10, color: '#6B7280', fontFamily: 'Poppins', marginBottom: 4 }}>
-                        {data.co2Saved}kg
-                      </Text>
-                      <View style={{ width: 24, height: height, backgroundColor: '#10B981', borderRadius: 4, marginBottom: 4 }} />
-                      <Text style={{ fontSize: 10, color: '#9CA3AF', fontFamily: 'Poppins' }}>
-                        {data.month}
-                      </Text>
+                    <View key={index} style={styles.chartBar}>
+                      <View style={styles.chartBarValue}>
+                        <Text style={styles.chartBarValueText}>{data.co2Saved}kg</Text>
+                      </View>
+                      <View style={[styles.chartBarFill, { height: height, backgroundColor: COLORS.primary }]} />
+                      <Text style={styles.chartBarLabel}>{data.month}</Text>
                     </View>
                   );
                 })}
@@ -214,62 +285,41 @@ export default function ProfileScreen() {
             </View>
 
             {/* Quick Stats */}
-            <View style={{ backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2 }}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
-                <Text style={{ fontSize: 14, color: '#6B7280', fontFamily: 'Poppins' }}>Total Items Scanned</Text>
-                <Text style={{ fontSize: 14, fontWeight: '600', color: '#111827', fontFamily: 'Poppins' }}>{userImpact.totalItemsScanned}</Text>
+            <View style={styles.quickStatsCard}>
+              <View style={styles.quickStatRow}>
+                <Text style={styles.quickStatLabel}>Total Items Scanned</Text>
+                <Text style={styles.quickStatValue}>{userImpact.totalItemsScanned}</Text>
               </View>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
-                <Text style={{ fontSize: 14, color: '#6B7280', fontFamily: 'Poppins' }}>Recycling Rate</Text>
-                <Text style={{ fontSize: 14, fontWeight: '600', color: '#10B981', fontFamily: 'Poppins' }}>
-                  {((userImpact.totalItemsRecycled / userImpact.totalItemsScanned) * 100).toFixed(0)}%
-                </Text>
+              <View style={styles.quickStatDivider} />
+              <View style={styles.quickStatRow}>
+                <Text style={styles.quickStatLabel}>Recycling Rate</Text>
+                <Text style={[styles.quickStatValue, { color: COLORS.primary }]}>{recyclingRate}%</Text>
               </View>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <Text style={{ fontSize: 14, color: '#6B7280', fontFamily: 'Poppins' }}>Badges Earned</Text>
-                <Text style={{ fontSize: 14, fontWeight: '600', color: '#F59E0B', fontFamily: 'Poppins' }}>
-                  {badges.filter(b => b.earned).length}/{badges.length}
-                </Text>
+              <View style={styles.quickStatDivider} />
+              <View style={styles.quickStatRow}>
+                <Text style={styles.quickStatLabel}>Badges Earned</Text>
+                <Text style={[styles.quickStatValue, { color: COLORS.warning }]}>{badgesEarned}/{badges.length}</Text>
               </View>
             </View>
           </View>
         )}
 
         {activeTab === 'badges' && (
-          <View style={{ padding: 16 }}>
-            <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#111827', fontFamily: 'Poppins', marginBottom: 12 }}>
-              🏅 Your Badges
-            </Text>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
+          <View style={styles.tabContent}>
+            <Text style={styles.sectionTitle}>🏅 Your Badges</Text>
+            <View style={styles.badgesGrid}>
               {badges.map((badge) => (
                 <View
                   key={badge.id}
-                  style={{
-                    width: '47%',
-                    backgroundColor: '#FFFFFF',
-                    borderRadius: 16,
-                    padding: 16,
-                    alignItems: 'center',
-                    shadowColor: '#000',
-                    shadowOffset: { width: 0, height: 1 },
-                    shadowOpacity: 0.05,
-                    shadowRadius: 2,
-                    opacity: badge.earned ? 1 : 0.5,
-                  }}
+                  style={[styles.badgeCard, !badge.earned && styles.badgeCardLocked]}
                 >
-                  <View style={{ alignItems: 'center', marginBottom: 8 }}>
-                  <Text style={{ fontSize: 40 }}>{badge.earned ? badge.icon : '🔒'}</Text>
-                </View>
-                  <Text style={{ fontSize: 14, fontWeight: '600', color: '#111827', fontFamily: 'Poppins', textAlign: 'center' }}>
-                    {badge.name}
-                  </Text>
-                  <Text style={{ fontSize: 11, color: '#6B7280', fontFamily: 'Poppins', textAlign: 'center', marginTop: 4 }}>
-                    {badge.description}
-                  </Text>
+                  <View style={styles.badgeIconContainer}>
+                    <Text style={styles.badgeIcon}>{badge.earned ? badge.icon : '🔒'}</Text>
+                  </View>
+                  <Text style={styles.badgeName}>{badge.name}</Text>
+                  <Text style={styles.badgeDescription}>{badge.description}</Text>
                   {badge.earned && badge.earnedDate && (
-                    <Text style={{ fontSize: 10, color: '#10B981', fontFamily: 'Poppins', marginTop: 8 }}>
-                      Earned {badge.earnedDate}
-                    </Text>
+                    <Text style={styles.badgeEarnedDate}>Earned {badge.earnedDate}</Text>
                   )}
                 </View>
               ))}
@@ -278,70 +328,493 @@ export default function ProfileScreen() {
         )}
 
         {activeTab === 'history' && (
-          <View style={{ padding: 16 }}>
-            <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#111827', fontFamily: 'Poppins', marginBottom: 12 }}>
-              📜 Scan History
-            </Text>
-            {[
-              { name: 'Plastic Water Bottle', date: 'Today', co2: 42, recyclable: true },
-              { name: 'Cardboard Box', date: 'Yesterday', co2: 65, recyclable: true },
-              { name: 'E-waste Device', date: '2 days ago', co2: 30, recyclable: false },
-              { name: 'Glass Jar', date: '3 days ago', co2: 70, recyclable: true },
-              { name: 'Aluminum Can', date: '4 days ago', co2: 85, recyclable: true },
-            ].map((item, index) => (
-              <View
-                key={index}
-                style={{
-                  backgroundColor: '#FFFFFF',
-                  borderRadius: 12,
-                  padding: 16,
-                  marginBottom: 12,
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 1 },
-                  shadowOpacity: 0.05,
-                  shadowRadius: 2,
-                }}
-              >
-                <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: item.recyclable ? '#F0FDF4' : '#FEF3C7', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
-                  <Text style={{ fontSize: 22 }}>{item.recyclable ? '♻️' : '⚠️'}</Text>
+          <View style={styles.tabContent}>
+            <Text style={styles.sectionTitle}>📜 Scan History</Text>
+            <View style={styles.historyList}>
+              {[
+                { name: 'Plastic Water Bottle', date: 'Today', co2: 42, recyclable: true },
+                { name: 'Cardboard Box', date: 'Yesterday', co2: 65, recyclable: true },
+                { name: 'E-waste Device', date: '2 days ago', co2: 30, recyclable: false },
+                { name: 'Glass Jar', date: '3 days ago', co2: 70, recyclable: true },
+                { name: 'Aluminum Can', date: '4 days ago', co2: 85, recyclable: true },
+              ].map((item, index) => (
+                <View key={index} style={styles.historyItem}>
+                  <View style={styles.historyIconContainer}>
+                    <Text style={styles.historyIcon}>{item.recyclable ? '♻️' : '⚠️'}</Text>
+                  </View>
+                  <View style={styles.historyContent}>
+                    <Text style={styles.historyName}>{item.name}</Text>
+                    <Text style={styles.historyDate}>{item.date}</Text>
+                  </View>
+                  <View style={styles.historyBadge}>
+                    <Text style={styles.historyBadgeText}>+{item.co2}%</Text>
+                  </View>
                 </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 14, fontWeight: '600', color: '#111827', fontFamily: 'Poppins' }}>
-                    {item.name}
-                  </Text>
-                  <Text style={{ fontSize: 12, color: '#6B7280', fontFamily: 'Poppins' }}>
-                    {item.date}
-                  </Text>
-                </View>
-                <View style={{ backgroundColor: '#F0FDF4', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 }}>
-                  <Text style={{ fontSize: 12, fontWeight: '600', color: '#10B981', fontFamily: 'Poppins' }}>
-                    +{item.co2}%
-                  </Text>
-                </View>
-              </View>
-            ))}
+              ))}
+            </View>
           </View>
         )}
 
         {/* Logout Button */}
-        <View style={{ padding: 16, paddingBottom: 32 }}>
+        <View style={styles.logoutContainer}>
           <TouchableOpacity
-            style={{ 
-              backgroundColor: '#EF4444', 
-              paddingVertical: 16, 
-              borderRadius: 12,
-              alignItems: 'center'
-            }}
+            style={styles.logoutButton}
             onPress={handleLogout}
+            activeOpacity={0.8}
           >
-            <Text style={{ color: '#FFFFFF', fontWeight: '600', fontFamily: 'Poppins' }}>
-              Logout
-            </Text>
+            <Text style={styles.logoutButtonText}>Logout</Text>
           </TouchableOpacity>
         </View>
+
+        {/* Bottom Spacer */}
+        <View style={styles.bottomSpacer} />
       </ScrollView>
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
+  header: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 12,
+    backgroundColor: COLORS.card,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+    fontFamily: 'Poppins',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  // Profile Header
+  profileHeader: {
+    backgroundColor: COLORS.card,
+    paddingHorizontal: 16,
+    paddingBottom: 20,
+    alignItems: 'center',
+  },
+  avatarContainer: {
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  avatar: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    backgroundColor: COLORS.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 4,
+    borderColor: COLORS.primaryLight,
+    marginBottom: 12,
+  },
+  avatarText: {
+    fontSize: 36,
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+  },
+  levelBadge: {
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 16,
+    paddingVertical: 4,
+    borderRadius: 20,
+  },
+  levelBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
+    fontFamily: 'Poppins',
+  },
+  userName: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+    fontFamily: 'Poppins',
+    marginBottom: 16,
+  },
+  // Points Card
+  pointsCard: {
+    backgroundColor: COLORS.background,
+    borderRadius: 16,
+    padding: 16,
+    width: '100%',
+  },
+  pointsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  pointsIconRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  pointsIcon: {
+    fontSize: 20,
+    marginRight: 8,
+  },
+  pointsValue: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: COLORS.warning,
+    fontFamily: 'Poppins',
+  },
+  pointsRemaining: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    fontFamily: 'Poppins',
+  },
+  progressBar: {
+    height: 12,
+    backgroundColor: COLORS.border,
+    borderRadius: 6,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: COLORS.warning,
+    borderRadius: 6,
+  },
+  // Tab Navigation
+  tabContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: COLORS.card,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+    gap: 8,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: 'center',
+    borderRadius: 12,
+    backgroundColor: COLORS.background,
+  },
+  tabActive: {
+    backgroundColor: COLORS.primary,
+  },
+  tabText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: COLORS.textSecondary,
+    fontFamily: 'Poppins',
+  },
+  tabTextActive: {
+    color: '#FFFFFF',
+  },
+  // Tab Content
+  tabContent: {
+    padding: 16,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: COLORS.textPrimary,
+    fontFamily: 'Poppins',
+    marginBottom: 16,
+  },
+  // Impact Grid
+  impactGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginBottom: 24,
+  },
+  impactCard: {
+    width: '47%',
+    backgroundColor: COLORS.card,
+    borderRadius: 16,
+    padding: 16,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  impactIconContainer: {
+    width: 52,
+    height: 52,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  impactIcon: {
+    fontSize: 26,
+  },
+  impactValue: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: COLORS.primary,
+    fontFamily: 'Poppins',
+    marginBottom: 4,
+  },
+  impactValueWater: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: COLORS.water,
+    fontFamily: 'Poppins',
+    marginBottom: 4,
+  },
+  impactValueEnergy: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: COLORS.energy,
+    fontFamily: 'Poppins',
+    marginBottom: 4,
+  },
+  impactLabel: {
+    fontSize: 11,
+    color: COLORS.textSecondary,
+    fontFamily: 'Poppins',
+    textAlign: 'center',
+  },
+  // Progress Section
+  progressSection: {
+    marginBottom: 24,
+  },
+  progressCards: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  progressCard: {
+    flex: 1,
+    backgroundColor: COLORS.card,
+    borderRadius: 16,
+    padding: 16,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  progressCardTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.textPrimary,
+    fontFamily: 'Poppins',
+    marginTop: 12,
+    textAlign: 'center',
+  },
+  progressCardSubtitle: {
+    fontSize: 11,
+    color: COLORS.textSecondary,
+    fontFamily: 'Poppins',
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  // Chart
+  chartCard: {
+    backgroundColor: COLORS.card,
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  chartTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.textPrimary,
+    fontFamily: 'Poppins',
+    marginBottom: 16,
+  },
+  chartContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    height: 120,
+    paddingVertical: 12,
+  },
+  chartBar: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  chartBarValue: {
+    marginBottom: 8,
+  },
+  chartBarValueText: {
+    fontSize: 10,
+    color: COLORS.textSecondary,
+    fontFamily: 'Poppins',
+  },
+  chartBarFill: {
+    width: 28,
+    borderRadius: 6,
+    marginBottom: 6,
+  },
+  chartBarLabel: {
+    fontSize: 10,
+    color: COLORS.textTertiary,
+    fontFamily: 'Poppins',
+  },
+  // Quick Stats
+  quickStatsCard: {
+    backgroundColor: COLORS.card,
+    borderRadius: 20,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  quickStatRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  quickStatDivider: {
+    height: 1,
+    backgroundColor: COLORS.border,
+  },
+  quickStatLabel: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    fontFamily: 'Poppins',
+  },
+  quickStatValue: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.textPrimary,
+    fontFamily: 'Poppins',
+  },
+  // Badges
+  badgesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  badgeCard: {
+    width: '47%',
+    backgroundColor: COLORS.card,
+    borderRadius: 16,
+    padding: 16,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  badgeCardLocked: {
+    opacity: 0.5,
+  },
+  badgeIconContainer: {
+    marginBottom: 12,
+  },
+  badgeIcon: {
+    fontSize: 40,
+  },
+  badgeName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.textPrimary,
+    fontFamily: 'Poppins',
+    textAlign: 'center',
+  },
+  badgeDescription: {
+    fontSize: 11,
+    color: COLORS.textSecondary,
+    fontFamily: 'Poppins',
+    textAlign: 'center',
+    marginTop: 4,
+  },
+  badgeEarnedDate: {
+    fontSize: 10,
+    color: COLORS.primary,
+    fontFamily: 'Poppins',
+    marginTop: 8,
+  },
+  // History
+  historyList: {
+    gap: 12,
+  },
+  historyItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.card,
+    borderRadius: 16,
+    padding: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  historyIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: COLORS.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  historyIcon: {
+    fontSize: 22,
+  },
+  historyContent: {
+    flex: 1,
+  },
+  historyName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.textPrimary,
+    fontFamily: 'Poppins',
+    marginBottom: 2,
+  },
+  historyDate: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    fontFamily: 'Poppins',
+  },
+  historyBadge: {
+    backgroundColor: COLORS.primaryLight,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  historyBadgeText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: COLORS.primary,
+    fontFamily: 'Poppins',
+  },
+  // Logout
+  logoutContainer: {
+    padding: 16,
+    paddingBottom: 32,
+  },
+  logoutButton: {
+    backgroundColor: COLORS.error,
+    paddingVertical: 16,
+    borderRadius: 14,
+    alignItems: 'center',
+  },
+  logoutButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 15,
+    fontFamily: 'Poppins',
+  },
+  // Bottom Spacer
+  bottomSpacer: {
+    height: 40,
+  },
+});
