@@ -7,11 +7,17 @@ import {
   ScrollView,
   StatusBar,
   StyleSheet,
+  Alert,
+  ActivityIndicator,
+  Modal,
+  FlatList,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import * as Location from 'expo-location';
 import { useAuth } from '@/context/AuthContext';
 import { useCarbon } from '@/context/CarbonContext';
+import { findNearbyRecyclingCenters, RecyclingCenter } from '@/lib/scanService';
 
 // Colors from UI/UX Guide
 const COLORS = {
@@ -31,31 +37,20 @@ const COLORS = {
   carbon: '#059669',
   water: '#0EA5E9',
   energy: '#FBBF24',
+  subtleBg: '#F3F4F6',
+  subtleBorder: '#E5E7EB',
 };
 
 export default function HomeScreen() {
- const { session } = useAuth();
-
-export default function HomeScreen() {
-  const { session } = useAuth();
-import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
-import {
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
-
-export default function HomeScreen() {
-  const { session, loading } = useAuth();
   const router = useRouter();
   const { user } = useAuth();
   const { totalFootprint, totalSavings, carbonHistory } = useCarbon();
   const [searchQuery, setSearchQuery] = useState('');
+  const [isLoadingLocation, setIsLoadingLocation] = useState(false);
+  const [showCentersModal, setShowCentersModal] = useState(false);
+  const [recyclingCenters, setRecyclingCenters] = useState<RecyclingCenter[]>([]);
+  const [locationName, setLocationName] = useState<string>('');
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
 
   // Get user name from session
   const userName = user?.name || user?.email?.split('@')[0] || 'Eco Hero';
@@ -74,29 +69,87 @@ export default function HomeScreen() {
     router.push('/scan');
   };
 
-  const getRecyclableColor = (status: string) => {
-    switch (status) {
-      case 'fully':
-        return '#10B981';
-      case 'partially':
-        return '#F59E0B';
-      case 'no':
-        return '#EF4444';
-      default:
-        return '#6B7280';
+  // Get current location (private - no coordinates shown to user)
+  const handleGetLocation = async () => {
+    setIsLoadingLocation(true);
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Location Required', 'Please enable location access to find nearby recycling centers.');
+        setIsLoadingLocation(false);
+        return;
+      }
+
+      const location = await Location.getCurrentPositionAsync({});
+      const { latitude, longitude } = location.coords;
+      
+      // Reverse geocode to get location name
+      const [address] = await Location.reverseGeocodeAsync({ latitude, longitude });
+      
+      if (address) {
+        const city = address.city || address.subregion || address.region || 'Unknown';
+        setLocationName(city);
+      }
+      
+      setUserLocation({ lat: latitude, lng: longitude });
+      
+      // Don't show lat/long to user - just confirm location found
+      Alert.alert(
+        '📍 Location Found',
+        'Your location has been set. Tap "Nearby Recycling Centres" to find centers in your area.',
+        [{ text: 'OK' }]
+      );
+    } catch (error) {
+      console.error('Location error:', error);
+      Alert.alert('Error', 'Could not get your location. Please check your GPS settings.');
+    } finally {
+      setIsLoadingLocation(false);
     }
   };
 
-  const getRecyclableIcon = (status: string) => {
-    switch (status) {
-      case 'fully':
-        return '♻️';
-      case 'partially':
-        return '⚠️';
-      case 'no':
-        return '❌';
-      default:
-        return '❓';
+  // Find recycling centers in the state/area
+  const handleFindNearbyCenters = async () => {
+    setShowCentersModal(true);
+    setIsLoadingLocation(true);
+
+    try {
+      let location = userLocation;
+      if (!location) {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert('Location Required', 'Please enable location access to find recycling centers in your area.');
+          setIsLoadingLocation(false);
+          return;
+        }
+
+        const coords = await Location.getCurrentPositionAsync({});
+        location = { lat: coords.coords.latitude, lng: coords.coords.longitude };
+        setUserLocation(location);
+        
+        // Reverse geocode to get location name
+        const [address] = await Location.reverseGeocodeAsync({ 
+          latitude: coords.coords.latitude, 
+          longitude: coords.coords.longitude 
+        });
+        
+        if (address) {
+          const city = address.city || address.subregion || address.region || 'Your Area';
+          setLocationName(city);
+        }
+      }
+
+      // Search with larger radius to cover entire state/region
+      const centers = await findNearbyRecyclingCenters(location.lat, location.lng, 100000);
+      setRecyclingCenters(centers);
+
+      if (centers.length === 0) {
+        Alert.alert('No Centers Found', 'No recycling centers were found in your area. Try searching manually.');
+      }
+    } catch (error) {
+      console.error('Find centers error:', error);
+      Alert.alert('Error', 'Could not find recycling centers. Please try again.');
+    } finally {
+      setIsLoadingLocation(false);
     }
   };
 
@@ -123,36 +176,24 @@ export default function HomeScreen() {
               style={styles.searchInput}
               placeholder="Search items..."
               placeholderTextColor={COLORS.textTertiary}
-              style={{ flex: 1, color: '#374151', fontFamily: 'Poppins' }}
-
-              placeholder="Search items..."
-
-
-  if (loading) {
-    return (
-      <View className="flex-1 bg-gray-50 items-center justify-center">
-        <Text className="text-gray-500">Loading...</Text>
-      </View>
-    );
-  }
-
-  return (
-    <SafeAreaView className="flex-1 bg-gray-50">
-      <StatusBar barStyle="dark-content" />
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        {/* Search Bar */}
-        <View className="px-4 pt-4">
-          <View className="flex-row items-center bg-gray-100 rounded-full px-4 py-3">
-            <Text className="text-gray-400 mr-3">🔍</Text>
-            <TextInput
-              className="flex-1 text-gray-700 font-poppins"
-              placeholder="Search products..."
-              placeholderTextColor="#9CA3AF"
               value={searchQuery}
               onChangeText={setSearchQuery}
             />
           </View>
+          {/* Location Button */}
+          <TouchableOpacity 
+            style={styles.locationButton}
+            onPress={handleGetLocation}
+            activeOpacity={0.7}
+          >
+            {isLoadingLocation ? (
+              <ActivityIndicator size="small" color={COLORS.primary} />
+            ) : (
+              <Text style={styles.locationIcon}>📍</Text>
+            )}
+          </TouchableOpacity>
         </View>
+
         {/* Impact Stats Dashboard */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Your Impact</Text>
@@ -164,18 +205,6 @@ export default function HomeScreen() {
               </View>
               <Text style={styles.statValue}>{totalSavings.toFixed(1)} kg</Text>
               <Text style={styles.statLabel}>CO₂ Saved</Text>
-        <View style={{ paddingHorizontal: 16, paddingTop: 24 }}>
-          <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#111827', fontFamily: 'Poppins' }}>
-            Good Morning
-          </Text>
-          <Text style={{ fontSize: 12, color: '#6B7280', marginTop: 4, fontFamily: 'Poppins' }}>{currentDate}</Text>
-          
-          {/* Impact Cards Row */}
-          <View style={{ flexDirection: 'row', marginTop: 16, gap: 12 }}>
-            <View style={{ flex: 1, backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2 }}>
-              <Text style={{ fontSize: 24, marginBottom: 4 }}>🌱</Text>
-              <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#10B981', fontFamily: 'Poppins' }}>0 kg</Text>
-              <Text style={{ fontSize: 11, color: '#6B7280', fontFamily: 'Poppins' }}>CO₂ Saved</Text>
             </View>
 
             {/* Carbon Footprint */}
@@ -208,7 +237,6 @@ export default function HomeScreen() {
         </View>
 
         {/* AI Scanner Card */}
-
         <View style={styles.section}>
           <View style={styles.scannerCard}>
             {/* Scanner Header */}
@@ -220,85 +248,23 @@ export default function HomeScreen() {
                 <View style={styles.scannerTitleContent}>
                   <Text style={styles.scannerTitle}>AI Scanner</Text>
                   <Text style={styles.scannerSubtitle}>Powered by Gemini Vision</Text>
-        <View style={{ paddingHorizontal: 16, paddingTop: 24, paddingBottom: 16 }}>
-          <View style={{ backgroundColor: '#FFFFFF', borderRadius: 20, padding: 20, shadowColor: '#10B981', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 12, elevation: 5 }}>
-            {/* Card Header */}
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Text style={{ fontSize: 24, marginRight: 8 }}>🤖</Text>
-                <View>
-                  <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#111827', fontFamily: 'Poppins' }}>
-                    AI Scanner
-                  </Text>
-                  <Text style={{ fontSize: 12, color: '#6B7280', fontFamily: 'Poppins' }}>
-                    Powered by Gemini Vision
-                  </Text>
                 </View>
               </View>
-              <Text style={{ fontSize: 16, fontWeight: '600', color: '#10B981', fontFamily: 'Poppins' }}>
-                Scan Item
-              </Text>
-              <Text style={{ color: '#10B981' }}>✕</Text>
-        <View className="px-4 pt-6">
-          <Text className="text-2xl font-bold text-gray-900 font-poppins">
-            Good Morning
-          </Text>
-          <View className="flex-row items-baseline mt-1">
-            <Text className="text-5xl font-bold text-gray-900 font-poppins">0</Text>
-            <Text className="text-base font-medium text-emerald-500 ml-2 font-poppins">
-              Items Scanned
-            </Text>
-          </View>
-          <Text className="text-sm text-gray-500 mt-1 font-poppins">{currentDate}</Text>
-        </View>
-
-        {/* Main Card: Scan Item */}
-        <View className="px-4 pt-6">
-          <View className="bg-white rounded-2xl shadow-sm p-4">
-            {/* Card Header */}
-            <View className="flex-row justify-between items-center mb-4">
-              <Text className="text-lg font-semibold text-emerald-500 font-poppins">
-                Scan Item
-              </Text>
-              <Text className="text-emerald-500">✕</Text>
             </View>
 
             {/* Camera/Upload Area */}
             <TouchableOpacity
               style={styles.scannerButton}
-              style={{ aspectRatio: 1.5, borderWidth: 3, borderColor: '#10B981', borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F0FDF4', borderStyle: 'dashed' }}
               onPress={handleScan}
               activeOpacity={0.9}
             >
-
               <View style={styles.scannerButtonContent}>
                 <View style={styles.scannerButtonIcon}>
                   <Text style={styles.scannerButtonIconText}>📷</Text>
-              <View style={{ alignItems: 'center' }}>
-                <View style={{ backgroundColor: '#10B981', padding: 16, borderRadius: 50, marginBottom: 12 }}>
-                  <Text style={{ fontSize: 32 }}>📷</Text>
-              style={{ aspectRatio: 1, borderWidth: 2, borderColor: '#10B981', borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F9FAFB' }}
-              onPress={handleUpload}
-              activeOpacity={0.8}
-            >
-              <View style={{ alignItems: 'center' }}>
-                <Text style={{ fontSize: 32, marginBottom: 8 }}>📷</Text>
-                <View style={{ backgroundColor: '#10B981', paddingHorizontal: 24, paddingVertical: 8, borderRadius: 24 }}>
-                  <Text style={{ color: '#FFFFFF', fontWeight: '500', fontFamily: 'Poppins' }}>Upload</Text>
-
-              className="aspect-square border-2 border-emerald-500 rounded-xl items-center justify-center bg-gray-50"
-              onPress={handleUpload}
-              activeOpacity={0.8}
-            >
-              <View className="items-center">
-                <Text className="text-4xl mb-2">📷</Text>
-                <View className="bg-emerald-500 px-6 py-2 rounded-full">
-                  <Text className="text-white font-medium font-poppins">Upload</Text>
                 </View>
                 <Text style={styles.scannerButtonTitle}>Tap to Scan</Text>
                 <Text style={styles.scannerButtonSubtitle}>
-                  Identify recyclability, carbon savings{'\n'}and get action options
+                  Identify recyclability, carbon savings{' '}and get action options
                 </Text>
               </View>
             </TouchableOpacity>
@@ -356,6 +322,16 @@ export default function HomeScreen() {
               <Text style={styles.optionButtonIcon}>🛍️</Text>
               <Text style={styles.optionButtonText}>Shop Eco-friendly</Text>
             </TouchableOpacity>
+
+            {/* New: Nearby Recycling Centres Button */}
+            <TouchableOpacity
+              style={styles.optionButton}
+              onPress={handleFindNearbyCenters}
+              activeOpacity={0.9}
+            >
+              <Text style={styles.optionButtonIcon}>♻️</Text>
+              <Text style={styles.optionButtonText}>Nearby Recycling Centres</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -363,53 +339,62 @@ export default function HomeScreen() {
         <View style={styles.bottomSpacer} />
       </ScrollView>
 
-        {/* Eco Shop Section */}
-        <View className="px-4 pt-6 pb-24">
-          <Text className="text-xl font-semibold text-gray-900 mb-4 font-poppins">
-            Eco Shop
-          </Text>
+      {/* Recycling Centers Modal */}
+      <Modal
+        visible={showCentersModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowCentersModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>♻️ Recycling Centres</Text>
+              <TouchableOpacity
+                style={styles.modalCloseButton}
+                onPress={() => setShowCentersModal(false)}
+              >
+                <Text style={styles.modalCloseText}>✕</Text>
+              </TouchableOpacity>
+            </View>
+
+            {locationName ? (
+              <Text style={styles.locationSubtitle}>📍 {locationName}</Text>
+            ) : null}
+
+            {isLoadingLocation ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color={COLORS.primary} />
+                <Text style={styles.loadingText}>Finding recycling centres...</Text>
+              </View>
+            ) : recyclingCenters.length > 0 ? (
+              <FlatList
+                data={recyclingCenters}
+                keyExtractor={(item) => item.placeId || Math.random().toString()}
+                renderItem={({ item }) => (
+                  <View style={styles.centerCard}>
+                    <View style={styles.centerInfo}>
+                      <Text style={styles.centerName}>{item.name}</Text>
+                      <Text style={styles.centerAddress}>{item.address}</Text>
+                      <View style={styles.centerRating}>
+                        <Text style={styles.ratingText}>⭐ {item.rating.toFixed(1)}</Text>
+                        <Text style={styles.ratingsCount}>({item.totalRatings})</Text>
+                      </View>
+                    </View>
+                  </View>
+                )}
+                contentContainerStyle={styles.centersList}
+              />
+            ) : (
+              <View style={styles.noCentersContainer}>
+                <Text style={styles.noCentersIcon}>🔍</Text>
+                <Text style={styles.noCentersText}>No centres found</Text>
+                <Text style={styles.noCentersSubtext}>Try enabling location access</Text>
+              </View>
+            )}
+          </View>
         </View>
-      </ScrollView>
-
-      {/* Floating Action Button */}
-      <View className="absolute bottom-20 right-6">
-        <TouchableOpacity
-          className="w-14 h-14 rounded-full bg-emerald-500 items-center justify-center shadow-lg"
-          onPress={() => router.push('/(tabs)/shop')}
-          activeOpacity={0.8}
-        >
-          <Text className="text-2xl">🛍️</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Bottom Navigation */}
-      <View className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-100 py-3 px-6">
-        <View className="flex-row justify-between items-center">
-          {/* Home - Active */}
-          <TouchableOpacity className="items-center">
-            <Text className="text-2xl">🏠</Text>
-            <Text className="text-xs font-medium text-emerald-500 mt-1 font-poppins">Home</Text>
-          </TouchableOpacity>
-
-          {/* Cart - Inactive */}
-          <TouchableOpacity
-            className="items-center"
-            onPress={() => router.push('/(tabs)/cart')}
-          >
-            <Text className="text-2xl">🛒</Text>
-            <Text className="text-xs font-medium text-gray-400 mt-1 font-poppins">Cart</Text>
-          </TouchableOpacity>
-
-          {/* Profile - Inactive */}
-          <TouchableOpacity
-            className="items-center"
-            onPress={() => router.push('/(tabs)/profile')}
-          >
-            <Text className="text-2xl">👤</Text>
-            <Text className="text-xs font-medium text-gray-400 mt-1 font-poppins">Profile</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -448,11 +433,14 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins',
     marginTop: 4,
   },
-  // Search Bar
+  // Search Bar & Location
   searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 24,
   },
   searchBar: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.card,
@@ -471,6 +459,20 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: COLORS.textPrimary,
     fontFamily: 'Poppins',
+  },
+  locationButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: COLORS.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  locationIcon: {
+    fontSize: 20,
   },
   // Sections
   section: {
@@ -601,6 +603,7 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
     fontFamily: 'Poppins',
     marginBottom: 4,
+    textAlign: 'center',
   },
   scannerButtonSubtitle: {
     fontSize: 12,
@@ -615,12 +618,12 @@ const styles = StyleSheet.create({
   },
   quickActionButton: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: COLORS.subtleBg,
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: COLORS.subtleBorder,
   },
   quickActionIcon: {
     fontSize: 24,
@@ -639,13 +642,13 @@ const styles = StyleSheet.create({
   optionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.primaryLight,
+    backgroundColor: COLORS.subtleBg,
     borderRadius: 14,
     paddingVertical: 16,
     paddingHorizontal: 20,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: COLORS.primary,
+    borderColor: COLORS.subtleBorder,
   },
   optionButtonIcon: {
     fontSize: 24,
@@ -654,11 +657,118 @@ const styles = StyleSheet.create({
   optionButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: COLORS.primary,
+    color: COLORS.textPrimary,
     fontFamily: 'Poppins',
   },
   // Bottom Spacer
   bottomSpacer: {
     height: 40,
+  },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: COLORS.card,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: '80%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+  },
+  modalCloseButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: COLORS.subtleBg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalCloseText: {
+    fontSize: 18,
+    color: COLORS.textSecondary,
+  },
+  locationSubtitle: {
+    fontSize: 14,
+    color: COLORS.primary,
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 4,
+  },
+  loadingContainer: {
+    padding: 40,
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    marginTop: 16,
+  },
+  centersList: {
+    padding: 16,
+  },
+  centerCard: {
+    backgroundColor: COLORS.subtleBg,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+  },
+  centerInfo: {
+    flex: 1,
+  },
+  centerName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.textPrimary,
+    marginBottom: 4,
+  },
+  centerAddress: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    marginBottom: 4,
+  },
+  centerRating: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  ratingText: {
+    fontSize: 12,
+    color: COLORS.warning,
+  },
+  ratingsCount: {
+    fontSize: 12,
+    color: COLORS.textTertiary,
+    marginLeft: 4,
+  },
+  noCentersContainer: {
+    padding: 40,
+    alignItems: 'center',
+  },
+  noCentersIcon: {
+    fontSize: 48,
+    marginBottom: 16,
+  },
+  noCentersText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.textPrimary,
+    marginBottom: 8,
+  },
+  noCentersSubtext: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
   },
 });

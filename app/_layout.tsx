@@ -7,6 +7,7 @@ import 'react-native-reanimated';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { CartProvider } from '@/context/CartContext';
+import { JournalProvider } from '@/context/JournalContext';
 import { CarbonProvider } from '@/context/CarbonContext';
 import Loading from '@/components/Loading';
 
@@ -44,9 +45,11 @@ export default function RootLayout() {
   return (
     <AuthProvider>
       <CartProvider>
-        <CarbonProvider>
-          <RootNavigator />
-        </CarbonProvider>
+        <JournalProvider>
+          <CarbonProvider>
+            <RootNavigator />
+          </CarbonProvider>
+        </JournalProvider>
       </CartProvider>
     </AuthProvider>
   );

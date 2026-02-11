@@ -1,8 +1,8 @@
 import { useAuth } from '@/context/AuthContext';
-import { useCarbon } from '@/context/CarbonContext';
+import { ScannedItem, useJournal } from '@/context/JournalContext';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
-import { ScrollView, Text, TouchableOpacity, View, StyleSheet, Animated, Dimensions } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { Animated, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Colors from UI/UX Guide
@@ -26,47 +26,41 @@ const COLORS = {
   points: '#EC4899',
 };
 
-interface Badge {
+// Badge definitions (criteria-based, not hardcoded)
+interface BadgeDefinition {
   id: string;
   name: string;
   icon: string;
   description: string;
-  earned: boolean;
-  earnedDate?: string;
+  criteria: (stats: UserStats) => boolean;
 }
 
-interface MonthlyData {
-  month: string;
-  co2Saved: number;
-  itemsScanned: number;
+interface UserStats {
+  totalItemsScanned: number;
+  totalItemsRecycled: number;
+  totalCo2Saved: number;
+  totalWaterSaved: number;
+  totalEnergySaved: number;
+  greenPoints: number;
+  consecutiveDays: number;
+  sharesCount: number;
 }
 
-const badges: Badge[] = [
-  { id: '1', name: 'First Scan', icon: '📸', description: 'Scan your first item', earned: true, earnedDate: '2024-01-15' },
-  { id: '2', name: 'Eco Warrior', icon: '🌍', description: 'Save 10kg CO₂', earned: true, earnedDate: '2024-01-20' },
-  { id: '3', name: 'Recycling Pro', icon: '♻️', description: 'Recycle 20 items', earned: false },
-  { id: '4', name: 'Water Saver', icon: '💧', description: 'Save 100L water', earned: false },
-  { id: '5', name: 'Energy Hero', icon: '⚡', description: 'Save 5kWh energy', earned: false },
-  { id: '6', name: 'Green Champion', icon: '🏆', description: 'Earn 500 points', earned: false },
-  { id: '7', name: 'Consistent', icon: '🔥', description: 'Scan 7 days in a row', earned: false },
-  { id: '8', name: 'Influencer', icon: '🌟', description: 'Share 5 items', earned: false },
-];
-
-const monthlyData: MonthlyData[] = [
-  { month: 'Jan', co2Saved: 2.5, itemsScanned: 5 },
-  { month: 'Feb', co2Saved: 4.2, itemsScanned: 8 },
-  { month: 'Mar', co2Saved: 6.8, itemsScanned: 12 },
-  { month: 'Apr', co2Saved: 8.1, itemsScanned: 15 },
-  { month: 'May', co2Saved: 12.5, itemsScanned: 22 },
-  { month: 'Jun', co2Saved: 15.3, itemsScanned: 28 },
+const badgeDefinitions: BadgeDefinition[] = [
+  { id: 'first-scan', name: 'First Scan', icon: '📸', description: 'Scan your first item', criteria: (s) => s.totalItemsScanned >= 1 },
+  { id: 'eco-warrior', name: 'Eco Warrior', icon: '🌍', description: 'Save 1kg CO₂', criteria: (s) => s.totalCo2Saved >= 1 },
+  { id: 'recycling-pro', name: 'Recycling Pro', icon: '♻️', description: 'Recycle 5 items', criteria: (s) => s.totalItemsRecycled >= 5 },
+  { id: 'water-saver', name: 'Water Saver', icon: '💧', description: 'Save 10L water', criteria: (s) => s.totalWaterSaved >= 10 },
+  { id: 'energy-hero', name: 'Energy Hero', icon: '⚡', description: 'Save 1kWh energy', criteria: (s) => s.totalEnergySaved >= 1 },
+  { id: 'green-champion', name: 'Green Champion', icon: '🏆', description: 'Earn 100 points', criteria: (s) => s.greenPoints >= 100 },
+  { id: 'consistent', name: 'Consistent', icon: '🔥', description: 'Scan 3 days in a row', criteria: (s) => s.consecutiveDays >= 3 },
+  { id: 'influencer', name: 'Influencer', icon: '🌟', description: 'Share 3 items', criteria: (s) => s.sharesCount >= 3 },
+  { id: 'master-recycler', name: 'Master Recycler', icon: '🌿', description: 'Recycle 20 items', criteria: (s) => s.totalItemsRecycled >= 20 },
+  { id: 'climate-hero', name: 'Climate Hero', icon: '🌎', description: 'Save 10kg CO₂', criteria: (s) => s.totalCo2Saved >= 10 },
 ];
 
 // Progress Ring Component
 function ProgressRing({ progress, color, size = 80, strokeWidth = 8 }: { progress: number; color: string; size?: number; strokeWidth?: number }) {
-  const radius = (size - strokeWidth) / 2;
-  const circumference = radius * 2 * Math.PI;
-  const strokeDashoffset = circumference - (progress / 100) * circumference;
-
   return (
     <View style={{ width: size, height: size, transform: [{ rotate: '-90deg' }] }}>
       <View style={{ width: size, height: size, borderRadius: size / 2, borderWidth: strokeWidth, borderColor: '#E5E7EB' }}>
@@ -80,7 +74,6 @@ function ProgressRing({ progress, color, size = 80, strokeWidth = 8 }: { progres
             borderTopColor: 'transparent',
             borderRightColor: 'transparent',
             borderBottomColor: 'transparent',
-            transform: [{ rotate: '0deg' }],
           }}
         />
       </View>
@@ -107,39 +100,113 @@ function ProgressRing({ progress, color, size = 80, strokeWidth = 8 }: { progres
   );
 }
 
+// Helper to calculate consecutive days from scanned items
+function calculateConsecutiveDays(items: ScannedItem[]): number {
+  if (items.length === 0) return 0;
+  
+  const sortedByDate = [...items].sort((a, b) => 
+    new Date(b.scannedAt).getTime() - new Date(a.scannedAt).getTime()
+  );
+  
+  let consecutive = 1;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  for (let i = 0; i < sortedByDate.length - 1; i++) {
+    const currentDate = new Date(sortedByDate[i].scannedAt);
+    currentDate.setHours(0, 0, 0, 0);
+    
+    const nextDate = new Date(sortedByDate[i + 1].scannedAt);
+    nextDate.setHours(0, 0, 0, 0);
+    
+    const diffDays = Math.floor((currentDate.getTime() - nextDate.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 1) {
+      consecutive++;
+    } else {
+      break;
+    }
+  }
+  
+  return consecutive;
+}
+
 export default function ProfileScreen() {
   const { user, session, signOut } = useAuth();
-  const { totalFootprint, totalSavings, carbonHistory } = useCarbon();
+  const { scannedItems, getTotalCarbonSaved, scannedCartCount } = useJournal();
   const router = useRouter();
-
   const [activeTab, setActiveTab] = useState<'impact' | 'badges' | 'history'>('impact');
-import { router } from 'expo-router';
-import React from 'react';
-import { SafeAreaView, StatusBar, Text, TouchableOpacity, View } from 'react-native';
 
-export default function ProfileScreen() {
-  const { signOut, user } = useAuth();
   const handleLogout = async () => {
     await signOut();
     router.replace('/(auth)/login');
   };
 
+  // Calculate real stats from JournalContext
+  const userStats: UserStats = useMemo(() => {
+    const totalWaterSaved = scannedItems.reduce((sum, item) => sum + parseFloat(item.waterSaved || '0'), 0);
+    const totalEnergySaved = scannedItems.reduce((sum, item) => sum + parseFloat(item.energySaved || '0'), 0);
+    
+    return {
+      totalItemsScanned: scannedItems.length,
+      totalItemsRecycled: scannedItems.filter(item => item.recyclability === 'fully' || item.recyclability === 'partially').length,
+      totalCo2Saved: getTotalCarbonSaved(),
+      totalWaterSaved,
+      totalEnergySaved,
+      greenPoints: Math.round(getTotalCarbonSaved() * 10),
+      consecutiveDays: calculateConsecutiveDays(scannedItems),
+      sharesCount: 0, // Would track from sharing feature
+    };
+  }, [scannedItems, getTotalCarbonSaved]);
 
-  // Calculate real impact data from CarbonContext
-  const itemsRecycled = carbonHistory.filter((entry) => entry.type === 'savings').length;
-  const co2Saved = totalSavings; // kg CO2 saved
-  const carbonFootprint = totalFootprint; // kg CO2 footprint
-  const greenPoints = Math.round(totalSavings * 10); // 10 points per kg saved
+  // Calculate earned badges dynamically
+  const earnedBadges = useMemo(() => {
+    return badgeDefinitions.map(badge => ({
+      ...badge,
+      earned: badge.criteria(userStats),
+      earnedDate: badge.criteria(userStats) 
+        ? scannedItems
+            .filter(() => badge.criteria(userStats))
+            .sort((a, b) => new Date(b.scannedAt).getTime() - new Date(a.scannedAt).getTime())[0]?.scannedAt
+        : undefined,
+    }));
+  }, [userStats, scannedItems]);
 
+  // Calculate monthly data from real scans
+  const monthlyData = useMemo(() => {
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const currentMonth = new Date().getMonth();
+    
+    return monthNames.slice(0, currentMonth + 1).map((month, index) => {
+      const monthScans = scannedItems.filter(item => {
+        const scanDate = new Date(item.scannedAt);
+        return scanDate.getMonth() === index;
+      });
+      
+      const co2Saved = monthScans.reduce((sum, item) => sum + parseFloat(item.carbonSaved || '0'), 0);
+      
+      return {
+        month,
+        co2Saved: co2Saved || (index === currentMonth ? 0 : 0.1), // Show minimal bar for empty months
+        itemsScanned: monthScans.length,
+      };
+    });
+  }, [scannedItems]);
+
+  // User impact data
   const userImpact = {
-    totalCo2Saved: co2Saved,
-    totalWaterSaved: 210,
-    totalEnergySaved: 7.2,
-    totalItemsScanned: carbonHistory.length,
-    totalItemsRecycled: itemsRecycled,
-    greenPoints: greenPoints,
-    level: greenPoints >= 500 ? 'Green Champion' : greenPoints >= 200 ? 'Eco Warrior' : 'Beginner',
-    nextLevelPoints: greenPoints >= 500 ? 1000 : greenPoints >= 200 ? 500 : 200,
+    totalCo2Saved: userStats.totalCo2Saved,
+    totalWaterSaved: userStats.totalWaterSaved,
+    totalEnergySaved: userStats.totalEnergySaved,
+    totalItemsScanned: userStats.totalItemsScanned,
+    totalItemsRecycled: userStats.totalItemsRecycled,
+    greenPoints: userStats.greenPoints,
+    level: userStats.greenPoints >= 500 ? 'Green Champion' : 
+           userStats.greenPoints >= 200 ? 'Eco Warrior' : 
+           userStats.greenPoints >= 50 ? 'Eco Starter' : 'Beginner',
+    nextLevelPoints: userStats.greenPoints >= 500 ? 1000 : 
+                    userStats.greenPoints >= 200 ? 500 : 
+                    userStats.greenPoints >= 50 ? 200 : 50,
   };
 
   const getProgressWidth = () => {
@@ -147,13 +214,30 @@ export default function ProfileScreen() {
     return Math.min(progress, 100);
   };
 
-  const recyclingRate = ((userImpact.totalItemsRecycled / userImpact.totalItemsScanned) * 100).toFixed(0);
-  const badgesEarned = badges.filter(b => b.earned).length;
+  const recyclingRate = userImpact.totalItemsScanned > 0 
+    ? ((userImpact.totalItemsRecycled / userImpact.totalItemsScanned) * 100).toFixed(0)
+    : 0;
+  
+  const badgesEarned = earnedBadges.filter(b => b.earned).length;
+
+  // Format date for display
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    if (date.toDateString() === today.toDateString()) {
+      return 'Today';
+    } else if (date.toDateString() === yesterday.toDateString()) {
+      return 'Yesterday';
+    } else {
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#F9FAFB' }} edges={['top', 'bottom']}>
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>My Impact</Text>
@@ -186,11 +270,13 @@ export default function ProfileScreen() {
                 <Text style={styles.pointsValue}>{userImpact.greenPoints}</Text>
               </View>
               <Text style={styles.pointsRemaining}>
-                {userImpact.nextLevelPoints - userImpact.greenPoints} points to next level
+                {userImpact.nextLevelPoints - userImpact.greenPoints > 0 
+                  ? `${userImpact.nextLevelPoints - userImpact.greenPoints} points to next level`
+                  : 'Max level reached!'}
               </Text>
             </View>
             <View style={styles.progressBar}>
-              <View style={{ ...styles.progressFill, width: `${getProgressWidth()}%` as `${number}%` }} />
+              <View style={{ ...styles.progressFill, width: `${getProgressWidth()}%` }} />
             </View>
           </View>
         </View>
@@ -233,7 +319,7 @@ export default function ProfileScreen() {
                 <View style={[styles.impactIconContainer, { backgroundColor: '#EFF6FF' }]}>
                   <Text style={styles.impactIcon}>💧</Text>
                 </View>
-                <Text style={styles.impactValueWater}>{userImpact.totalWaterSaved}L</Text>
+                <Text style={styles.impactValueWater}>{userImpact.totalWaterSaved.toFixed(0)}L</Text>
                 <Text style={styles.impactLabel}>Water Saved</Text>
               </View>
 
@@ -242,7 +328,7 @@ export default function ProfileScreen() {
                 <View style={[styles.impactIconContainer, { backgroundColor: '#FEF3C7' }]}>
                   <Text style={styles.impactIcon}>⚡</Text>
                 </View>
-                <Text style={styles.impactValueEnergy}>{userImpact.totalEnergySaved}kWh</Text>
+                <Text style={styles.impactValueEnergy}>{userImpact.totalEnergySaved.toFixed(1)}kWh</Text>
                 <Text style={styles.impactLabel}>Energy Saved</Text>
               </View>
 
@@ -256,19 +342,19 @@ export default function ProfileScreen() {
               </View>
             </View>
 
-            {/* Progress Rings */}
+            {/* Progress rings */}
             <View style={styles.progressSection}>
-              <Text style={styles.sectionTitle}>📈 Monthly Progress</Text>
+              <Text style={styles.sectionTitle}>📈 Progress</Text>
               <View style={styles.progressCards}>
                 <View style={styles.progressCard}>
                   <ProgressRing progress={parseFloat(recyclingRate as string)} color={COLORS.primary} />
                   <Text style={styles.progressCardTitle}>Recycling Rate</Text>
-                  <Text style={styles.progressCardSubtitle}>{recyclingRate}% of items recycled</Text>
+                  <Text style={styles.progressCardSubtitle}>{recyclingRate}% recycled</Text>
                 </View>
                 <View style={styles.progressCard}>
-                  <ProgressRing progress={parseFloat(((badgesEarned / badges.length) * 100).toFixed(0))} color={COLORS.warning} />
+                  <ProgressRing progress={parseFloat(((badgesEarned / badgeDefinitions.length) * 100).toFixed(0))} color={COLORS.warning} />
                   <Text style={styles.progressCardTitle}>Badges Earned</Text>
-                  <Text style={styles.progressCardSubtitle}>{badgesEarned}/{badges.length} badges unlocked</Text>
+                  <Text style={styles.progressCardSubtitle}>{badgesEarned}/{badgeDefinitions.length}</Text>
                 </View>
               </View>
             </View>
@@ -278,14 +364,14 @@ export default function ProfileScreen() {
               <Text style={styles.chartTitle}>CO₂ Saved This Year</Text>
               <View style={styles.chartContainer}>
                 {monthlyData.map((data, index) => {
-                  const maxCo2 = Math.max(...monthlyData.map(d => d.co2Saved));
+                  const maxCo2 = Math.max(...monthlyData.map(d => d.co2Saved), 1);
                   const height = (data.co2Saved / maxCo2) * 80;
                   return (
                     <View key={index} style={styles.chartBar}>
                       <View style={styles.chartBarValue}>
-                        <Text style={styles.chartBarValueText}>{data.co2Saved}kg</Text>
+                        <Text style={styles.chartBarValueText}>{data.co2Saved > 0.1 ? `${data.co2Saved.toFixed(1)}kg` : ''}</Text>
                       </View>
-                      <View style={[styles.chartBarFill, { height: height, backgroundColor: COLORS.primary }]} />
+                      <View style={[styles.chartBarFill, { height: Math.max(height, 4), backgroundColor: data.co2Saved > 0.1 ? COLORS.primary : COLORS.border }]} />
                       <Text style={styles.chartBarLabel}>{data.month}</Text>
                     </View>
                   );
@@ -307,7 +393,12 @@ export default function ProfileScreen() {
               <View style={styles.quickStatDivider} />
               <View style={styles.quickStatRow}>
                 <Text style={styles.quickStatLabel}>Badges Earned</Text>
-                <Text style={[styles.quickStatValue, { color: COLORS.warning }]}>{badgesEarned}/{badges.length}</Text>
+                <Text style={[styles.quickStatValue, { color: COLORS.warning }]}>{badgesEarned}/{badgeDefinitions.length}</Text>
+              </View>
+              <View style={styles.quickStatDivider} />
+              <View style={styles.quickStatRow}>
+                <Text style={styles.quickStatLabel}>Cart Items</Text>
+                <Text style={[styles.quickStatValue, { color: COLORS.info }]}>{scannedCartCount}</Text>
               </View>
             </View>
           </View>
@@ -316,8 +407,17 @@ export default function ProfileScreen() {
         {activeTab === 'badges' && (
           <View style={styles.tabContent}>
             <Text style={styles.sectionTitle}>🏅 Your Badges</Text>
+            
+            {/* Progress summary */}
+            <View style={styles.badgesProgressCard}>
+              <Text style={styles.badgesProgressTitle}>Progress: {badgesEarned} / {badgeDefinitions.length} badges</Text>
+              <View style={styles.badgesProgressBar}>
+                <View style={{ ...styles.badgesProgressFill, width: `${(badgesEarned / badgeDefinitions.length) * 100}%` }} />
+              </View>
+            </View>
+
             <View style={styles.badgesGrid}>
-              {badges.map((badge) => (
+              {earnedBadges.map((badge) => (
                 <View
                   key={badge.id}
                   style={[styles.badgeCard, !badge.earned && styles.badgeCardLocked]}
@@ -328,7 +428,7 @@ export default function ProfileScreen() {
                   <Text style={styles.badgeName}>{badge.name}</Text>
                   <Text style={styles.badgeDescription}>{badge.description}</Text>
                   {badge.earned && badge.earnedDate && (
-                    <Text style={styles.badgeEarnedDate}>Earned {badge.earnedDate}</Text>
+                    <Text style={styles.badgeEarnedDate}>Earned {formatDate(badge.earnedDate)}</Text>
                   )}
                 </View>
               ))}
@@ -339,33 +439,44 @@ export default function ProfileScreen() {
         {activeTab === 'history' && (
           <View style={styles.tabContent}>
             <Text style={styles.sectionTitle}>📜 Scan History</Text>
-            <View style={styles.historyList}>
-              {[
-                { name: 'Plastic Water Bottle', date: 'Today', co2: 42, recyclable: true },
-                { name: 'Cardboard Box', date: 'Yesterday', co2: 65, recyclable: true },
-                { name: 'E-waste Device', date: '2 days ago', co2: 30, recyclable: false },
-                { name: 'Glass Jar', date: '3 days ago', co2: 70, recyclable: true },
-                { name: 'Aluminum Can', date: '4 days ago', co2: 85, recyclable: true },
-              ].map((item, index) => (
-                <View key={index} style={styles.historyItem}>
-                  <View style={styles.historyIconContainer}>
-                    <Text style={styles.historyIcon}>{item.recyclable ? '♻️' : '⚠️'}</Text>
+            
+            {scannedItems.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyIcon}>📋</Text>
+                <Text style={styles.emptyTitle}>No scans yet</Text>
+                <Text style={styles.emptySubtitle}>Start scanning items to build your history</Text>
+                <TouchableOpacity
+                  style={styles.scanButton}
+                  onPress={() => router.push('/scan')}
+                >
+                  <Text style={styles.scanButtonText}>Scan Now</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View style={styles.historyList}>
+                {scannedItems.map((item) => (
+                  <View key={item.id} style={styles.historyItem}>
+                    <View style={styles.historyIconContainer}>
+                      <Text style={styles.historyIcon}>
+                        {item.recyclability === 'fully' ? '♻️' : item.recyclability === 'partially' ? '⚠️' : '❌'}
+                      </Text>
+                    </View>
+                    <View style={styles.historyContent}>
+                      <Text style={styles.historyName}>{item.productName}</Text>
+                      <Text style={styles.historyDate}>{formatDate(item.scannedAt)}</Text>
+                    </View>
+                    <View style={styles.historyBadge}>
+                      <Text style={styles.historyBadgeText}>+{item.savingsPercent}%</Text>
+                    </View>
                   </View>
-                  <View style={styles.historyContent}>
-                    <Text style={styles.historyName}>{item.name}</Text>
-                    <Text style={styles.historyDate}>{item.date}</Text>
-                  </View>
-                  <View style={styles.historyBadge}>
-                    <Text style={styles.historyBadgeText}>+{item.co2}%</Text>
-                  </View>
-                </View>
-              ))}
-            </View>
+                ))}
+              </View>
+            )}
           </View>
         )}
-        <View style={styles.logoutContainer}>
 
-        <View style={{ padding: 16, paddingBottom: 32 }}>
+        {/* Logout Button */}
+        <View style={styles.logoutContainer}>
           <TouchableOpacity
             style={styles.logoutButton}
             onPress={handleLogout}
@@ -378,44 +489,6 @@ export default function ProfileScreen() {
         {/* Bottom Spacer */}
         <View style={styles.bottomSpacer} />
       </ScrollView>
-        <TouchableOpacity
-          style={{ 
-            backgroundColor: '#EF4444', 
-            paddingVertical: 16, 
-            borderRadius: 12,
-            alignItems: 'center'
-          }}
-          onPress={handleLogout}
-        >
-          <Text style={{ color: '#FFFFFF', fontWeight: '600', fontFamily: 'Poppins' }}>
-            Logout
-          </Text>
-    <SafeAreaView className="flex-1 bg-gray-50">
-      <StatusBar barStyle="dark-content" />
-      <View className="flex-1 px-4 pt-6">
-        <Text className="text-2xl font-bold text-gray-900 mb-6 font-poppins">Profile</Text>
-        
-        <View className="bg-white rounded-2xl p-4 mb-4">
-          <View className="flex-row items-center mb-4">
-            <View className="w-16 h-16 bg-emerald-100 rounded-full items-center justify-center">
-              <Text className="text-2xl">👤</Text>
-            </View>
-            <View className="ml-4">
-              <Text className="text-lg font-semibold text-gray-900 font-poppins">
-                {user?.email || 'User'}
-              </Text>
-              <Text className="text-gray-500 font-poppins">View Profile</Text>
-            </View>
-          </View>
-        </View>
-
-        <TouchableOpacity
-          className="bg-red-500 py-4 rounded-xl items-center mt-auto mb-6"
-          onPress={handleLogout}
-        >
-          <Text className="text-white font-semibold font-poppins">Logout</Text>
-        </TouchableOpacity>
-      </View>
     </SafeAreaView>
   );
 }
@@ -547,88 +620,84 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   tabActive: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.primaryLight,
   },
   tabText: {
     fontSize: 12,
-    fontWeight: '600',
     color: COLORS.textSecondary,
     fontFamily: 'Poppins',
+    fontWeight: '500',
   },
   tabTextActive: {
-    color: '#FFFFFF',
+    color: COLORS.primary,
+    fontWeight: '600',
   },
   // Tab Content
   tabContent: {
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingTop: 16,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
     color: COLORS.textPrimary,
     fontFamily: 'Poppins',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   // Impact Grid
   impactGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
-    marginBottom: 24,
   },
   impactCard: {
-    width: '47%',
+    width: '48%',
     backgroundColor: COLORS.card,
     borderRadius: 16,
     padding: 16,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
   },
   impactIconContainer: {
-    width: 52,
-    height: 52,
-    borderRadius: 14,
+    width: 48,
+    height: 48,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 12,
   },
   impactIcon: {
-    fontSize: 26,
+    fontSize: 24,
   },
   impactValue: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: '700',
     color: COLORS.primary,
     fontFamily: 'Poppins',
     marginBottom: 4,
   },
   impactValueWater: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: '700',
     color: COLORS.water,
     fontFamily: 'Poppins',
     marginBottom: 4,
   },
   impactValueEnergy: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: '700',
     color: COLORS.energy,
     fontFamily: 'Poppins',
     marginBottom: 4,
   },
   impactLabel: {
-    fontSize: 11,
+    fontSize: 12,
     color: COLORS.textSecondary,
     fontFamily: 'Poppins',
     textAlign: 'center',
   },
   // Progress Section
   progressSection: {
-    marginBottom: 24,
+    marginTop: 24,
   },
   progressCards: {
     flexDirection: 'row',
@@ -640,52 +709,38 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
   },
   progressCardTitle: {
     fontSize: 14,
     fontWeight: '600',
     color: COLORS.textPrimary,
-    fontFamily: 'Poppins',
     marginTop: 12,
     textAlign: 'center',
   },
   progressCardSubtitle: {
     fontSize: 11,
     color: COLORS.textSecondary,
-    fontFamily: 'Poppins',
     marginTop: 4,
     textAlign: 'center',
   },
   // Chart
   chartCard: {
     backgroundColor: COLORS.card,
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    borderRadius: 16,
+    padding: 16,
+    marginTop: 24,
   },
   chartTitle: {
     fontSize: 16,
     fontWeight: '600',
     color: COLORS.textPrimary,
-    fontFamily: 'Poppins',
     marginBottom: 16,
   },
   chartContainer: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
     justifyContent: 'space-between',
-    height: 120,
-    paddingVertical: 12,
+    alignItems: 'flex-end',
+    height: 100,
   },
   chartBar: {
     alignItems: 'center',
@@ -695,30 +750,25 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   chartBarValueText: {
-    fontSize: 10,
-    color: COLORS.textSecondary,
-    fontFamily: 'Poppins',
+    fontSize: 9,
+    color: COLORS.textTertiary,
   },
   chartBarFill: {
-    width: 28,
-    borderRadius: 6,
-    marginBottom: 6,
+    width: 20,
+    borderRadius: 4,
+    minHeight: 4,
   },
   chartBarLabel: {
     fontSize: 10,
-    color: COLORS.textTertiary,
-    fontFamily: 'Poppins',
+    color: COLORS.textSecondary,
+    marginTop: 8,
   },
   // Quick Stats
   quickStatsCard: {
     backgroundColor: COLORS.card,
-    borderRadius: 20,
+    borderRadius: 16,
     padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    marginTop: 24,
   },
   quickStatRow: {
     flexDirection: 'row',
@@ -736,12 +786,35 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins',
   },
   quickStatValue: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '600',
     color: COLORS.textPrimary,
     fontFamily: 'Poppins',
   },
   // Badges
+  badgesProgressCard: {
+    backgroundColor: COLORS.card,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+  },
+  badgesProgressTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.textPrimary,
+    marginBottom: 12,
+  },
+  badgesProgressBar: {
+    height: 8,
+    backgroundColor: COLORS.border,
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  badgesProgressFill: {
+    height: '100%',
+    backgroundColor: COLORS.primary,
+    borderRadius: 4,
+  },
   badgesGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -753,42 +826,74 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
   },
   badgeCardLocked: {
-    opacity: 0.5,
+    opacity: 0.6,
   },
   badgeIconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: COLORS.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: 12,
   },
   badgeIcon: {
-    fontSize: 40,
+    fontSize: 28,
   },
   badgeName: {
     fontSize: 14,
     fontWeight: '600',
     color: COLORS.textPrimary,
-    fontFamily: 'Poppins',
     textAlign: 'center',
+    marginBottom: 4,
   },
   badgeDescription: {
     fontSize: 11,
     color: COLORS.textSecondary,
-    fontFamily: 'Poppins',
     textAlign: 'center',
-    marginTop: 4,
+    marginBottom: 8,
   },
   badgeEarnedDate: {
     fontSize: 10,
     color: COLORS.primary,
-    fontFamily: 'Poppins',
-    marginTop: 8,
+    fontWeight: '500',
   },
   // History
+  emptyContainer: {
+    backgroundColor: COLORS.card,
+    borderRadius: 16,
+    padding: 40,
+    alignItems: 'center',
+  },
+  emptyIcon: {
+    fontSize: 48,
+    marginBottom: 16,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: COLORS.textPrimary,
+    marginBottom: 8,
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    marginBottom: 24,
+    textAlign: 'center',
+  },
+  scanButton: {
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 32,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  scanButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
   historyList: {
     gap: 12,
   },
@@ -796,25 +901,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.card,
-    borderRadius: 16,
-    padding: 14,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 1,
+    borderRadius: 12,
+    padding: 12,
   },
   historyIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: COLORS.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
   },
   historyIcon: {
-    fontSize: 22,
+    fontSize: 20,
   },
   historyContent: {
     flex: 1,
@@ -823,42 +923,39 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: COLORS.textPrimary,
-    fontFamily: 'Poppins',
-    marginBottom: 2,
   },
   historyDate: {
     fontSize: 12,
     color: COLORS.textSecondary,
-    fontFamily: 'Poppins',
   },
   historyBadge: {
     backgroundColor: COLORS.primaryLight,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
     borderRadius: 8,
   },
   historyBadgeText: {
     fontSize: 12,
     fontWeight: '600',
     color: COLORS.primary,
-    fontFamily: 'Poppins',
   },
   // Logout
   logoutContainer: {
-    padding: 16,
-    paddingBottom: 32,
+    paddingHorizontal: 16,
+    paddingTop: 24,
   },
   logoutButton: {
-    backgroundColor: COLORS.error,
-    paddingVertical: 16,
-    borderRadius: 14,
+    backgroundColor: '#FEE2E2',
+    paddingVertical: 14,
+    borderRadius: 12,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#DC2626',
   },
   logoutButtonText: {
-    color: '#FFFFFF',
+    color: '#DC2626',
+    fontSize: 16,
     fontWeight: '600',
-    fontSize: 15,
-    fontFamily: 'Poppins',
   },
   // Bottom Spacer
   bottomSpacer: {

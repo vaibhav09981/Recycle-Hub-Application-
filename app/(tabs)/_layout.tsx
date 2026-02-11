@@ -4,11 +4,13 @@ import { Text, View } from 'react-native';
 
 import { HapticTab } from '@/components/haptic-tab';
 import { useCart } from '@/context/CartContext';
+import { useJournal } from '@/context/JournalContext';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const { cartCount } = useCart();
+  const { journalCount } = useJournal();
 
   return (
     <Tabs
@@ -16,7 +18,6 @@ export default function TabLayout() {
         tabBarActiveTintColor: '#10B981',
         tabBarInactiveTintColor: '#9CA3AF',
         headerShown: false,
-
         tabBarButton: (props) => <HapticTab {...props} />,
         tabBarStyle: {
           position: 'absolute',
@@ -40,10 +41,6 @@ export default function TabLayout() {
           fontFamily: 'Poppins',
           fontSize: 10,
           fontWeight: '500',
-        tabBarButton: HapticTab,
-        tabBarStyle: {
-          display: 'none', // Hide default tab bar, we have custom one
-
         },
       }}>
       <Tabs.Screen
@@ -107,6 +104,44 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="journal"
+        options={{
+          title: 'Journal',
+          tabBarIcon: ({ color }) => (
+            <View style={{ alignItems: 'center' }}>
+              <Text style={{ fontSize: 24 }}>📋</Text>
+              {journalCount > 0 && (
+                <View
+                  style={{
+                    position: 'absolute',
+                    top: -4,
+                    right: -8,
+                    backgroundColor: '#10B981',
+                    borderRadius: 10,
+                    minWidth: 20,
+                    height: 20,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    paddingHorizontal: 6,
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: '#FFFFFF',
+                      fontSize: 12,
+                      fontWeight: 'bold',
+                      fontFamily: 'Poppins',
+                    }}
+                  >
+                    {journalCount > 99 ? '99+' : journalCount}
+                  </Text>
+                </View>
+              )}
+            </View>
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',
@@ -115,20 +150,6 @@ export default function TabLayout() {
               <Text style={{ fontSize: 24 }}>👤</Text>
             </View>
           ),
-        }}
-      />
-      <Tabs.Screen
-        name="cart"
-        options={{
-          title: 'Cart',
-          tabBarIcon: ({ color }) => <Text className="text-2xl">🛒</Text>,
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: 'Profile',
-          tabBarIcon: ({ color }) => <Text className="text-2xl">👤</Text>,
         }}
       />
     </Tabs>
