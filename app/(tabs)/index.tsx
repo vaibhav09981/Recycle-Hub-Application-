@@ -147,21 +147,6 @@ export default function HomeScreen() {
                 <Text className="text-sm text-textSecondary font-poppins text-center px-8">Identify recyclability, carbon savings and get action options</Text>
               </View>
             </TouchableOpacity>
-
-            <View className="flex-row gap-3">
-              <TouchableOpacity className="flex-1 bg-subtleBg rounded-xl py-3 items-center" onPress={() => router.push('/(tabs)/shop')} activeOpacity={0.7}>
-                <Text className="text-xl mb-1">🛍️</Text>
-                <Text className="text-xs font-medium text-textSecondary font-poppins">Eco Shop</Text>
-              </TouchableOpacity>
-              <TouchableOpacity className="flex-1 bg-subtleBg rounded-xl py-3 items-center" onPress={() => router.push('/(tabs)/cart')} activeOpacity={0.7}>
-                <Text className="text-xl mb-1">🛒</Text>
-                <Text className="text-xs font-medium text-textSecondary font-poppins">My Cart</Text>
-              </TouchableOpacity>
-              <TouchableOpacity className="flex-1 bg-subtleBg rounded-xl py-3 items-center" onPress={() => router.push('/(tabs)/profile')} activeOpacity={0.7}>
-                <Text className="text-xl mb-1">📊</Text>
-                <Text className="text-xs font-medium text-textSecondary font-poppins">My Impact</Text>
-              </TouchableOpacity>
-            </View>
           </View>
         </View>
 
