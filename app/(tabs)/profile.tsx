@@ -189,26 +189,26 @@ export default function ProfileScreen() {
             {user?.name || session?.user?.email?.split('@')[0] || 'Eco Hero'}
           </Text>
 
-          <View className="w-full bg-background rounded-xl p-4">
+          <View className="w-full bg-neutral-50 border border-black/10 rounded-xl p-4">
             <View className="flex-row justify-between items-center mb-2.5">
               <View className="flex-row items-center">
                 <Text className="text-xl mr-2">⭐</Text>
-                <Text className="text-2xl font-bold text-warning font-poppins">{userImpact.greenPoints}</Text>
+                <Text className="text-2xl font-bold text-amber-500 font-poppins">{userImpact.greenPoints}</Text>
               </View>
-              <Text className="text-xs text-textSecondary font-poppins">
+              <Text className="text-sm text-black font-poppins">
                 {userImpact.nextLevelPoints - userImpact.greenPoints > 0 ? `${userImpact.nextLevelPoints - userImpact.greenPoints} points to next level` : 'Max level reached!'}
               </Text>
             </View>
             <View className="h-3 bg-border rounded-full overflow-hidden">
-              <View className="h-full bg-warning rounded-full" style={{ width: `${Math.min((userImpact.greenPoints / userImpact.nextLevelPoints) * 100, 100)}%` }} />
+              <View className="h-full bg-amber-500 rounded-full" style={{ width: `${Math.min((userImpact.greenPoints / userImpact.nextLevelPoints) * 100, 100)}%` }} />
             </View>
           </View>
         </View>
 
-        <View className="flex-row px-4 py-3 bg-card border-b border-border gap-2">
+        <View className="flex-row px-4 py-3 bg-neutral-50 border-b border-black/10 gap-2">
           {(['impact', 'badges', 'history'] as const).map((tab) => (
-            <TouchableOpacity key={tab} className={`flex-1 py-2.5 rounded-xl ${activeTab === tab ? 'bg-primaryLight' : 'bg-background'}`} onPress={() => setActiveTab(tab)} activeOpacity={0.8}>
-              <Text className={`text-xs font-medium text-center font-poppins ${activeTab === tab ? 'text-primary' : 'text-textSecondary'}`}>
+            <TouchableOpacity key={tab} className={`flex-1 py-2.5 border border-black rounded-xl ${activeTab === tab ? 'bg-green-600' : 'bg-neutral-100'}`} onPress={() => setActiveTab(tab)} activeOpacity={0.8}>
+              <Text className={`text-sm font-medium text-center font-poppins ${activeTab === tab ? 'text-white' : 'text-black'}`}>
                 {tab === 'impact' ? '📊 Impact' : tab === 'badges' ? '🏅 Badges' : '📜 History'}
               </Text>
             </TouchableOpacity>
