@@ -7,13 +7,11 @@ import {
   ScrollView,
   StatusBar,
   Animated,
-  StyleSheet,
   Easing,
   Alert,
   ActivityIndicator,
   Linking,
   Modal,
-  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -30,27 +28,6 @@ import {
   ScanResult,
   RecyclingCenter,
 } from '@/lib/scanService';
-
-// Colors from UI/UX Guide
-const COLORS = {
-  primary: '#10B981',
-  primaryDark: '#047857',
-  primaryLight: '#D1FAE5',
-  background: '#F9FAFB',
-  card: '#FFFFFF',
-  textPrimary: '#1F2937',
-  textSecondary: '#6B7280',
-  textTertiary: '#9CA3AF',
-  border: '#E5E7EB',
-  warning: '#F59E0B',
-  error: '#EF4444',
-  success: '#22C55E',
-  info: '#3B82F6',
-  carbon: '#059669',
-  water: '#0EA5E9',
-  energy: '#FBBF24',
-  points: '#EC4899',
-};
 
 // Animated Scanning View Component
 function ScanningAnimation() {
@@ -83,21 +60,19 @@ function ScanningAnimation() {
   });
 
   return (
-    <View style={styles.scanningContainer}>
-      <View style={styles.scanFrame}>
+    <View className="items-center justify-center py-6 bg-black/50">
+      <View className="w-50 h-50 relative overflow-hidden rounded-lg border-2 border-primary">
         <Animated.View
-          style={[
-            styles.scanLine,
-            { transform: [{ translateY }] },
-          ]}
+          className="w-full h-0.5 bg-primary absolute"
+          style={{ transform: [{ translateY }] }}
         />
-        <View style={[styles.scanCorner, styles.scanCornerTL]} />
-        <View style={[styles.scanCorner, styles.scanCornerTR]} />
-        <View style={[styles.scanCorner, styles.scanCornerBL]} />
-        <View style={[styles.scanCorner, styles.scanCornerBR]} />
+        <View className="absolute top-0 left-0 w-5 h-5 border-t-4 border-l-4 border-primary" />
+        <View className="absolute top-0 right-0 w-5 h-5 border-t-4 border-r-4 border-primary" />
+        <View className="absolute bottom-0 left-0 w-5 h-5 border-b-4 border-l-4 border-primary" />
+        <View className="absolute bottom-0 right-0 w-5 h-5 border-b-4 border-r-4 border-primary" />
       </View>
-      <Text style={styles.scanningText}>AI Analyzing...</Text>
-      <Text style={styles.scanningSubtext}>Identifying product & recyclability</Text>
+      <Text className="text-white text-lg font-semibold mt-4">AI Analyzing...</Text>
+      <Text className="text-white text-xs mt-1 opacity-80">Identifying product & recyclability</Text>
     </View>
   );
 }
@@ -236,7 +211,6 @@ export default function ScanScreen() {
     if (details) {
       // Open in maps
       const label = encodeURIComponent(center.name);
-      const addr = encodeURIComponent(center.address);
       const url = `https://www.google.com/maps/search/?api=1&query=${label}&query_place_id=${center.placeId}`;
       
       Linking.openURL(url).catch(() => {
@@ -284,10 +258,10 @@ export default function ScanScreen() {
 
   const getRecyclableColor = (status: string) => {
     switch (status) {
-      case 'fully': return COLORS.success;
-      case 'partially': return COLORS.warning;
-      case 'non': return COLORS.error;
-      default: return COLORS.textTertiary;
+      case 'fully': return '#22C55E';
+      case 'partially': return '#F59E0B';
+      case 'non': return '#EF4444';
+      default: return '#9CA3AF';
     }
   };
 
@@ -316,79 +290,79 @@ export default function ScanScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+    <SafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
       <StatusBar barStyle="dark-content" />
       
       {/* Header */}
-      <View style={styles.header}>
+      <View className="flex-row items-center px-4 py-4 bg-card border-b border-border">
         <TouchableOpacity 
+          className="flex-row items-center py-2"
           onPress={() => router.back()} 
-          style={styles.backButton}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Text style={styles.backArrow}>←</Text>
-          <Text style={styles.backText}>BACK</Text>
+          <Text className="text-xl text-primary font-semibold mr-1">←</Text>
+          <Text className="text-base font-semibold text-primary">BACK</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>AI Scanner</Text>
-        <View style={styles.headerRight} />
+        <Text className="flex-1 text-xl font-bold text-textPrimary text-center">AI Scanner</Text>
+        <View className="w-10" />
       </View>
 
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16 }}>
         {/* Initial Upload State */}
         {!selectedImage && (
-          <View style={styles.uploadSection}>
-            <View style={styles.uploadIconContainer}>
-              <Text style={styles.uploadIcon}>📷</Text>
+          <View className="items-center px-6 py-10">
+            <View className="w-30 h-30 rounded-full bg-primaryLight items-center justify-center mb-6">
+              <Text className="text-5xl">📷</Text>
             </View>
-            <Text style={styles.uploadTitle}>Scan an Item</Text>
-            <Text style={styles.uploadSubtitle}>
+            <Text className="text-2xl font-bold text-textPrimary mb-3">Scan an Item</Text>
+            <Text className="text-sm text-textSecondary text-center mb-8 leading-5">
               Take a photo or upload an image to identify recyclability and environmental impact using AI
             </Text>
             
             <TouchableOpacity
-              style={styles.uploadButton}
+              className="w-full bg-primary px-8 py-4 rounded-xl items-center mb-3"
               onPress={handlePickImage}
               activeOpacity={0.9}
             >
-              <Text style={styles.uploadButtonText}>Choose from Gallery</Text>
+              <Text className="text-base font-semibold text-white">Choose from Gallery</Text>
             </TouchableOpacity>
             
             <TouchableOpacity
-              style={[styles.uploadButton, styles.cameraButton]}
+              className="w-full bg-card border-2 border-primary px-8 py-4 rounded-xl items-center mb-4"
               onPress={handleTakePhoto}
               activeOpacity={0.9}
             >
-              <Text style={[styles.uploadButtonText, styles.cameraButtonText]}>📸 Take Photo</Text>
+              <Text className="text-base font-semibold text-primary">📸 Take Photo</Text>
             </TouchableOpacity>
             
-            <Text style={styles.uploadDivider}>AI will identify the product automatically</Text>
+            <Text className="text-xs text-textTertiary mt-4">AI will identify the product automatically</Text>
           </View>
         )}
 
         {/* Analyzing State */}
         {selectedImage && !scanResult && (
-          <View style={styles.analyzingSection}>
-            <View style={styles.imagePreviewContainer}>
-              <Image source={{ uri: selectedImage }} style={styles.imagePreview} />
+          <View className="py-6">
+            <View className="rounded-xl overflow-hidden bg-card">
+              <Image source={{ uri: selectedImage }} className="w-full h-72 rounded-xl" />
               
               {isAnalyzing ? (
                 <ScanningAnimation />
               ) : (
-                <View style={styles.analyzingActions}>
+                <View className="flex-row justify-around p-4">
                   <TouchableOpacity
-                    style={styles.analyzeButton}
+                    className="bg-primary px-6 py-3 rounded-lg"
                     onPress={() => analyzeImage(selectedImage)}
                     activeOpacity={0.9}
                   >
-                    <Text style={styles.analyzeButtonText}>🔄 Analyze Again</Text>
+                    <Text className="text-sm font-semibold text-white">🔄 Analyze Again</Text>
                   </TouchableOpacity>
                   
                   <TouchableOpacity
-                    style={styles.cancelButton}
+                    className="bg-card px-6 py-3 rounded-lg border border-border"
                     onPress={resetScan}
                     activeOpacity={0.9}
                   >
-                    <Text style={styles.cancelButtonText}>Cancel</Text>
+                    <Text className="text-sm font-semibold text-textSecondary">Cancel</Text>
                   </TouchableOpacity>
                 </View>
               )}
@@ -398,118 +372,118 @@ export default function ScanScreen() {
 
         {/* Scan Result */}
         {scanResult && (
-          <View style={styles.resultSection}>
+          <View className="py-6">
             {/* Item Status Card */}
-            <View style={styles.statusCard}>
-              <View style={styles.statusHeader}>
-                <View style={styles.statusIconContainer}>
-                  <Text style={styles.statusIcon}>{getStatusIcon(scanResult.recyclability)}</Text>
+            <View className="bg-card rounded-2xl p-5 mb-4">
+              <View className="flex-row items-start mb-4">
+                <View className="w-15 h-15 rounded-full bg-primaryLight items-center justify-content-center mr-4">
+                  <Text className="text-3xl">{getStatusIcon(scanResult.recyclability)}</Text>
                 </View>
-                <View style={styles.statusInfo}>
-                  <Text style={styles.statusTitle}>{scanResult.productName}</Text>
+                <View className="flex-1">
+                  <Text className="text-xl font-bold text-textPrimary mb-1">{scanResult.productName}</Text>
                   {scanResult.brand && (
-                    <Text style={styles.brandText}>{scanResult.brand}</Text>
+                    <Text className="text-sm text-textSecondary mb-2">{scanResult.brand}</Text>
                   )}
-                  <View style={[styles.statusBadge, { backgroundColor: getRecyclableColor(scanResult.recyclability) }]}>
-                    <Text style={styles.statusBadgeText}>{getRecyclableText(scanResult.recyclability)}</Text>
+                  <View className="px-3 py-1 rounded-lg self-start" style={{ backgroundColor: getRecyclableColor(scanResult.recyclability) }}>
+                    <Text className="text-xs font-semibold text-white">{getRecyclableText(scanResult.recyclability)}</Text>
                   </View>
                 </View>
               </View>
 
               {/* Product Image */}
-              <Image source={{ uri: scanResult.imageUrl }} style={styles.productImage} />
+              <Image source={{ uri: scanResult.imageUrl }} className="w-full h-48 rounded-xl mb-4" />
 
               {/* Material Info */}
-              <View style={styles.materialCard}>
-                <Text style={styles.materialLabel}>Material Composition</Text>
-                <View style={styles.materialTags}>
+              <View className="bg-background rounded-xl p-4 mb-4">
+                <Text className="text-sm font-semibold text-textSecondary mb-2">Material Composition</Text>
+                <View className="flex-row flex-wrap mb-2">
                   {scanResult.materials.map((material, index) => (
-                    <View key={index} style={styles.materialTag}>
-                      <Text style={styles.materialTagText}>{material}</Text>
+                    <View key={index} className="bg-primaryLight px-3 py-1.5 rounded-full mr-2 mb-2">
+                      <Text className="text-xs font-medium text-primaryDark">{material}</Text>
                     </View>
                   ))}
                 </View>
-                <Text style={styles.categoryText}>Category: {scanResult.category}</Text>
+                <Text className="text-xs text-textTertiary">Category: {scanResult.category}</Text>
               </View>
 
               {/* Impact Stats */}
-              <View style={styles.impactSection}>
-                <Text style={styles.impactTitle}>🌱 Your Environmental Impact</Text>
-                <View style={styles.impactGrid}>
+              <View className="mb-4">
+                <Text className="text-base font-semibold text-textPrimary mb-3">🌱 Your Environmental Impact</Text>
+                <View className="flex-row flex-wrap justify-between">
                   {/* CO2 Saved */}
-                  <View style={[styles.impactCard, styles.impactCardCarbon]}>
-                    <Text style={styles.impactIcon}>🌍</Text>
-                    <Text style={styles.impactValue}>{scanResult.savingsPercent}%</Text>
-                    <Text style={styles.impactLabel}>CO₂ Savings</Text>
-                    <Text style={styles.impactSubtext}>{scanResult.carbonSaved} kg</Text>
+                  <View className="w-[48%] bg-background rounded-xl p-4 items-center mb-3 border-l-4 border-emerald-600">
+                    <Text className="text-2xl mb-2">🌍</Text>
+                    <Text className="text-xl font-bold text-textPrimary">{scanResult.savingsPercent}%</Text>
+                    <Text className="text-xs text-textSecondary mt-1">CO₂ Savings</Text>
+                    <Text className="text-xs text-textTertiary mt-0.5">{scanResult.carbonSaved} kg</Text>
                   </View>
                   
                   {/* Water Saved */}
-                  <View style={[styles.impactCard, styles.impactCardWater]}>
-                    <Text style={styles.impactIcon}>💧</Text>
-                    <Text style={styles.impactValue}>{scanResult.waterSaved}L</Text>
-                    <Text style={styles.impactLabel}>Water Saved</Text>
+                  <View className="w-[48%] bg-background rounded-xl p-4 items-center mb-3 border-l-4 border-blue-500">
+                    <Text className="text-2xl mb-2">💧</Text>
+                    <Text className="text-xl font-bold text-textPrimary">{scanResult.waterSaved}L</Text>
+                    <Text className="text-xs text-textSecondary mt-1">Water Saved</Text>
                   </View>
                   
                   {/* Energy Saved */}
-                  <View style={[styles.impactCard, styles.impactCardEnergy]}>
-                    <Text style={styles.impactIcon}>⚡</Text>
-                    <Text style={styles.impactValue}>{scanResult.energySaved}kWh</Text>
-                    <Text style={styles.impactLabel}>Energy Saved</Text>
+                  <View className="w-[48%] bg-background rounded-xl p-4 items-center mb-3 border-l-4 border-amber-500">
+                    <Text className="text-2xl mb-2">⚡</Text>
+                    <Text className="text-xl font-bold text-textPrimary">{scanResult.energySaved}kWh</Text>
+                    <Text className="text-xs text-textSecondary mt-1">Energy Saved</Text>
                   </View>
 
                   {/* Green Points */}
-                  <View style={[styles.impactCard, styles.impactCardPoints]}>
-                    <Text style={styles.impactIcon}>⭐</Text>
-                    <Text style={styles.impactValuePoints}>+{Math.round(scanResult.savingsPercent * 2)}</Text>
-                    <Text style={styles.impactLabel}>Green Points</Text>
+                  <View className="w-[48%] bg-background rounded-xl p-4 items-center mb-3 border-l-4 border-pink-500">
+                    <Text className="text-2xl mb-2">⭐</Text>
+                    <Text className="text-xl font-bold text-pink-500">+{Math.round(scanResult.savingsPercent * 2)}</Text>
+                    <Text className="text-xs text-textSecondary mt-1">Green Points</Text>
                   </View>
                 </View>
               </View>
             </View>
 
             {/* Recycling Tips */}
-            <View style={styles.tipsCard}>
-              <Text style={styles.tipsTitle}>💡 Recycling Tips</Text>
-              <Text style={styles.tipMainText}>{scanResult.recyclingTips}</Text>
+            <View className="bg-card rounded-xl p-4 mb-4">
+              <Text className="text-base font-semibold text-textPrimary mb-2">💡 Recycling Tips</Text>
+              <Text className="text-sm text-textSecondary leading-5">{scanResult.recyclingTips}</Text>
             </View>
 
             {/* Action Options */}
-            <View style={styles.actionsCard}>
-              <Text style={styles.actionsTitle}>♻️ What Would You Like to Do?</Text>
+            <View className="bg-card rounded-xl p-4 mb-4">
+              <Text className="text-base font-semibold text-textPrimary mb-4">♻️ What Would You Like to Do?</Text>
               
               <TouchableOpacity
-                style={styles.actionButton}
+                className="flex-row items-center py-3 border-b border-border"
                 onPress={handleFindRecyclingCenters}
                 activeOpacity={0.9}
               >
-                <View style={[styles.actionIconContainer, { backgroundColor: COLORS.primaryLight }]}>
-                  <Text style={styles.actionIcon}>📍</Text>
+                <View className="w-11 h-11 rounded-full bg-primaryLight items-center justify-center mr-3">
+                  <Text className="text-xl">📍</Text>
                 </View>
-                <View style={styles.actionInfo}>
-                  <Text style={styles.actionTitle}>Find Recycling Center</Text>
-                  <Text style={styles.actionSubtitle}>Locate nearest drop-off point</Text>
+                <View className="flex-1">
+                  <Text className="text-sm font-semibold text-textPrimary">Find Recycling Center</Text>
+                  <Text className="text-xs text-textSecondary mt-0.5">Locate nearest drop-off point</Text>
                 </View>
-                <Text style={styles.actionArrow}>→</Text>
+                <Text className="text-lg text-primary font-semibold">→</Text>
               </TouchableOpacity>
               
               <TouchableOpacity
-                style={styles.actionButton}
+                className="flex-row items-center py-3 border-b border-border"
                 onPress={handleSchedulePickup}
                 activeOpacity={0.9}
               >
-                <View style={[styles.actionIconContainer, { backgroundColor: COLORS.primaryLight }]}>
-                  <Text style={styles.actionIcon}>🚚</Text>
+                <View className="w-11 h-11 rounded-full bg-primaryLight items-center justify-center mr-3">
+                  <Text className="text-xl">🚚</Text>
                 </View>
-                <View style={styles.actionInfo}>
-                  <Text style={styles.actionTitle}>Schedule Pickup</Text>
-                  <Text style={styles.actionSubtitle}>Scrap Uncle - Home pickup</Text>
+                <View className="flex-1">
+                  <Text className="text-sm font-semibold text-textPrimary">Schedule Pickup</Text>
+                  <Text className="text-xs text-textSecondary mt-0.5">Scrap Uncle - Home pickup</Text>
                 </View>
-                <Text style={styles.actionArrow}>→</Text>
+                <Text className="text-lg text-primary font-semibold">→</Text>
               </TouchableOpacity>
               
               <TouchableOpacity
-                style={styles.actionButton}
+                className="flex-row items-center py-3 border-b border-border"
                 onPress={() => {
                   Alert.alert(
                     'Drop-off Points',
@@ -522,57 +496,57 @@ export default function ScanScreen() {
                 }}
                 activeOpacity={0.9}
               >
-                <View style={[styles.actionIconContainer, { backgroundColor: COLORS.primaryLight }]}>
-                  <Text style={styles.actionIcon}>🏠</Text>
+                <View className="w-11 h-11 rounded-full bg-primaryLight items-center justify-center mr-3">
+                  <Text className="text-xl">🏠</Text>
                 </View>
-                <View style={styles.actionInfo}>
-                  <Text style={styles.actionTitle}>Drop-off Near Me</Text>
-                  <Text style={styles.actionSubtitle}>Find nearby collection points</Text>
+                <View className="flex-1">
+                  <Text className="text-sm font-semibold text-textPrimary">Drop-off Near Me</Text>
+                  <Text className="text-xs text-textSecondary mt-0.5">Find nearby collection points</Text>
                 </View>
-                <Text style={styles.actionArrow}>→</Text>
+                <Text className="text-lg text-primary font-semibold">→</Text>
               </TouchableOpacity>
               
               <TouchableOpacity
-                style={styles.actionButtonEco}
+                className="flex-row items-center py-3"
                 onPress={() => router.push('/(tabs)/shop')}
                 activeOpacity={0.9}
               >
-                <View style={[styles.actionIconContainer, { backgroundColor: '#FEF3C7' }]}>
-                  <Text style={styles.actionIcon}>🛒</Text>
+                <View className="w-11 h-11 rounded-full bg-amber-100 items-center justify-center mr-3">
+                  <Text className="text-xl">🛒</Text>
                 </View>
-                <View style={styles.actionInfo}>
-                  <Text style={styles.actionTitle}>Eco Alternatives</Text>
-                  <Text style={styles.actionSubtitle}>Shop sustainable products</Text>
+                <View className="flex-1">
+                  <Text className="text-sm font-semibold text-textPrimary">Eco Alternatives</Text>
+                  <Text className="text-xs text-textSecondary mt-0.5">Shop sustainable products</Text>
                 </View>
-                <Text style={[styles.actionArrow, { color: COLORS.warning }]}>→</Text>
+                <Text className="text-lg text-amber-500 font-semibold">→</Text>
               </TouchableOpacity>
             </View>
 
             {/* Recycle Button */}
             <TouchableOpacity
-              style={[styles.recycleButton, isSaved && styles.recycleButtonSaved]}
+              className={`py-4 rounded-xl items-center mb-3 ${isSaved ? 'bg-success' : 'bg-primary'}`}
               onPress={handleRecycle}
               disabled={isSaved}
               activeOpacity={0.9}
             >
-              <Text style={styles.recycleButtonText}>
+              <Text className="text-base font-bold text-white">
                 {isSaved ? '✓ Saved to Journal!' : '♻️ Recycle This Item'}
               </Text>
             </TouchableOpacity>
 
             {/* Scan Another */}
             <TouchableOpacity
-              style={styles.scanAnotherButton}
+              className="py-4 items-center"
               onPress={resetScan}
               activeOpacity={0.7}
             >
-              <Text style={styles.scanAnotherText}>Scan Another Item</Text>
+              <Text className="text-sm font-semibold text-primary">Scan Another Item</Text>
             </TouchableOpacity>
           </View>
         )}
 
         {/* Bottom Spacing */}
-        <View style={styles.bottomSpacer} />
+        <View className="h-10" />
       </ScrollView>
 
       {/* Recycling Centers Modal */}
@@ -582,51 +556,51 @@ export default function ScanScreen() {
         transparent={true}
         onRequestClose={() => setShowCentersModal(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>♻️ Nearby Recycling Centers</Text>
+        <View className="flex-1 bg-black/50 justify-end">
+          <View className="bg-card rounded-t-3xl max-h-[80%]">
+            <View className="flex-row items-center justify-between p-5 border-b border-border">
+              <Text className="text-lg font-bold text-textPrimary">♻️ Nearby Recycling Centers</Text>
               <TouchableOpacity
-                style={styles.modalCloseButton}
+                className="w-8 h-8 rounded-full bg-background items-center justify-center"
                 onPress={() => setShowCentersModal(false)}
               >
-                <Text style={styles.modalCloseText}>✕</Text>
+                <Text className="text-lg text-textSecondary">✕</Text>
               </TouchableOpacity>
             </View>
 
             {isLoadingLocation ? (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={COLORS.primary} />
-                <Text style={styles.loadingText}>Finding nearby centers...</Text>
+              <View className="p-10 items-center">
+                <ActivityIndicator size="large" color="#10B981" />
+                <Text className="text-sm text-textSecondary mt-4">Finding nearby centers...</Text>
               </View>
             ) : recyclingCenters.length > 0 ? (
-              <ScrollView style={styles.centersList}>
+              <ScrollView contentContainerStyle={{ padding: 16 }}>
                 {recyclingCenters.map((center, index) => (
                   <TouchableOpacity
                     key={center.placeId || index}
-                    style={styles.centerCard}
+                    className="flex-row items-center bg-background rounded-xl p-4 mb-3"
                     onPress={() => handleCenterPress(center)}
                     activeOpacity={0.9}
                   >
-                    <View style={styles.centerInfo}>
-                      <Text style={styles.centerName}>{center.name}</Text>
-                      <Text style={styles.centerAddress}>{center.address}</Text>
-                      <View style={styles.centerRating}>
-                        <Text style={styles.ratingText}>⭐ {center.rating.toFixed(1)}</Text>
-                        <Text style={styles.ratingsCount}>({center.totalRatings})</Text>
+                    <View className="flex-1">
+                      <Text className="text-sm font-semibold text-textPrimary mb-1">{center.name}</Text>
+                      <Text className="text-xs text-textSecondary mb-1">{center.address}</Text>
+                      <View className="flex-row items-center">
+                        <Text className="text-xs text-amber-500">⭐ {center.rating.toFixed(1)}</Text>
+                        <Text className="text-xs text-textTertiary ml-1">({center.totalRatings})</Text>
                       </View>
                     </View>
-                    <View style={styles.centerAction}>
-                      <Text style={styles.directionsText}>Directions →</Text>
+                    <View className="ml-3">
+                      <Text className="text-xs text-primary font-semibold">Directions →</Text>
                     </View>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
             ) : (
-              <View style={styles.noCentersContainer}>
-                <Text style={styles.noCentersIcon}>🔍</Text>
-                <Text style={styles.noCentersText}>No centers found nearby</Text>
-                <Text style={styles.noCentersSubtext}>Try expanding your search radius</Text>
+              <View className="p-10 items-center">
+                <Text className="text-5xl mb-4">🔍</Text>
+                <Text className="text-base font-semibold text-textPrimary mb-2">No centers found nearby</Text>
+                <Text className="text-sm text-textSecondary">Try expanding your search radius</Text>
               </View>
             )}
           </View>
@@ -635,573 +609,3 @@ export default function ScanScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    backgroundColor: COLORS.card,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-  },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 8,
-  },
-  backArrow: {
-    fontSize: 20,
-    color: COLORS.primary,
-    fontWeight: '600',
-    marginRight: 4,
-  },
-  backText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.primary,
-  },
-  headerTitle: {
-    flex: 1,
-    fontSize: 20,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
-    textAlign: 'center',
-  },
-  headerRight: {
-    width: 40,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  uploadSection: {
-    alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingVertical: 40,
-  },
-  uploadIconContainer: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: COLORS.primaryLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 24,
-  },
-  uploadIcon: {
-    fontSize: 48,
-  },
-  uploadTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
-    marginBottom: 12,
-  },
-  uploadSubtitle: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-    textAlign: 'center',
-    marginBottom: 32,
-    lineHeight: 20,
-  },
-  uploadButton: {
-    backgroundColor: COLORS.primary,
-    paddingHorizontal: 32,
-    paddingVertical: 16,
-    borderRadius: 12,
-    width: '100%',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  cameraButton: {
-    backgroundColor: COLORS.card,
-    borderWidth: 2,
-    borderColor: COLORS.primary,
-  },
-  cameraButtonText: {
-    color: COLORS.primary,
-  },
-  uploadButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  uploadDivider: {
-    fontSize: 12,
-    color: COLORS.textTertiary,
-    marginTop: 16,
-  },
-  analyzingSection: {
-    paddingHorizontal: 16,
-    paddingVertical: 24,
-  },
-  imagePreviewContainer: {
-    borderRadius: 16,
-    overflow: 'hidden',
-    backgroundColor: COLORS.card,
-  },
-  imagePreview: {
-    width: '100%',
-    height: 300,
-    borderRadius: 16,
-  },
-  analyzingActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    padding: 16,
-  },
-  analyzeButton: {
-    backgroundColor: COLORS.primary,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-  },
-  analyzeButtonText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  cancelButton: {
-    backgroundColor: COLORS.card,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  cancelButtonText: {
-    color: COLORS.textSecondary,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  scanningContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 24,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  scanFrame: {
-    width: 200,
-    height: 200,
-    borderWidth: 2,
-    borderColor: COLORS.primary,
-    borderRadius: 8,
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  scanLine: {
-    width: '100%',
-    height: 2,
-    backgroundColor: COLORS.primary,
-    position: 'absolute',
-  },
-  scanCorner: {
-    position: 'absolute',
-    width: 20,
-    height: 20,
-    borderColor: COLORS.primary,
-  },
-  scanCornerTL: {
-    top: 0,
-    left: 0,
-    borderTopWidth: 4,
-    borderLeftWidth: 4,
-  },
-  scanCornerTR: {
-    top: 0,
-    right: 0,
-    borderTopWidth: 4,
-    borderRightWidth: 4,
-  },
-  scanCornerBL: {
-    bottom: 0,
-    left: 0,
-    borderBottomWidth: 4,
-    borderLeftWidth: 4,
-  },
-  scanCornerBR: {
-    bottom: 0,
-    right: 0,
-    borderBottomWidth: 4,
-    borderRightWidth: 4,
-  },
-  scanningText: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: '600',
-    marginTop: 16,
-  },
-  scanningSubtext: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    marginTop: 4,
-    opacity: 0.8,
-  },
-  resultSection: {
-    paddingHorizontal: 16,
-    paddingVertical: 24,
-  },
-  statusCard: {
-    backgroundColor: COLORS.card,
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
-  },
-  statusHeader: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 16,
-  },
-  statusIconContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: COLORS.primaryLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 16,
-  },
-  statusIcon: {
-    fontSize: 28,
-  },
-  statusInfo: {
-    flex: 1,
-  },
-  statusTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
-    marginBottom: 4,
-  },
-  brandText: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-    marginBottom: 8,
-  },
-  statusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 8,
-    alignSelf: 'flex-start',
-  },
-  statusBadgeText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  productImage: {
-    width: '100%',
-    height: 200,
-    borderRadius: 12,
-    marginBottom: 16,
-  },
-  materialCard: {
-    backgroundColor: COLORS.background,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-  },
-  materialLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.textSecondary,
-    marginBottom: 8,
-  },
-  materialTags: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginBottom: 8,
-  },
-  materialTag: {
-    backgroundColor: COLORS.primaryLight,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    marginRight: 8,
-    marginBottom: 8,
-  },
-  materialTagText: {
-    color: COLORS.primaryDark,
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  categoryText: {
-    fontSize: 12,
-    color: COLORS.textTertiary,
-  },
-  impactSection: {
-    marginBottom: 16,
-  },
-  impactTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
-    marginBottom: 12,
-  },
-  impactGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  impactCard: {
-    width: '48%',
-    backgroundColor: COLORS.background,
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  impactCardCarbon: {
-    borderLeftWidth: 4,
-    borderLeftColor: COLORS.carbon,
-  },
-  impactCardWater: {
-    borderLeftWidth: 4,
-    borderLeftColor: COLORS.water,
-  },
-  impactCardEnergy: {
-    borderLeftWidth: 4,
-    borderLeftColor: COLORS.energy,
-  },
-  impactCardPoints: {
-    borderLeftWidth: 4,
-    borderLeftColor: COLORS.points,
-  },
-  impactIcon: {
-    fontSize: 24,
-    marginBottom: 8,
-  },
-  impactValue: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
-  },
-  impactValuePoints: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: COLORS.points,
-  },
-  impactLabel: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
-    marginTop: 4,
-    textAlign: 'center',
-  },
-  impactSubtext: {
-    fontSize: 10,
-    color: COLORS.textTertiary,
-    marginTop: 2,
-  },
-  tipsCard: {
-    backgroundColor: COLORS.card,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-  },
-  tipsTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
-    marginBottom: 8,
-  },
-  tipMainText: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-    lineHeight: 20,
-  },
-  actionsCard: {
-    backgroundColor: COLORS.card,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-  },
-  actionsTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
-    marginBottom: 16,
-  },
-  actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-  },
-  actionButtonEco: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-  },
-  actionIconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  actionIcon: {
-    fontSize: 20,
-  },
-  actionInfo: {
-    flex: 1,
-  },
-  actionTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
-  },
-  actionSubtitle: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
-    marginTop: 2,
-  },
-  actionArrow: {
-    fontSize: 18,
-    color: COLORS.primary,
-    fontWeight: '600',
-  },
-  recycleButton: {
-    backgroundColor: COLORS.primary,
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  recycleButtonSaved: {
-    backgroundColor: COLORS.success,
-  },
-  recycleButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  scanAnotherButton: {
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  scanAnotherText: {
-    color: COLORS.primary,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  bottomSpacer: {
-    height: 40,
-  },
-  // Modal styles
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: COLORS.card,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    maxHeight: '80%',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
-  },
-  modalCloseButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: COLORS.background,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  modalCloseText: {
-    fontSize: 18,
-    color: COLORS.textSecondary,
-  },
-  loadingContainer: {
-    padding: 40,
-    alignItems: 'center',
-  },
-  loadingText: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-    marginTop: 16,
-  },
-  centersList: {
-    padding: 16,
-  },
-  centerCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.background,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-  },
-  centerInfo: {
-    flex: 1,
-  },
-  centerName: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
-    marginBottom: 4,
-  },
-  centerAddress: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
-    marginBottom: 4,
-  },
-  centerRating: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  ratingText: {
-    fontSize: 12,
-    color: COLORS.warning,
-  },
-  ratingsCount: {
-    fontSize: 12,
-    color: COLORS.textTertiary,
-    marginLeft: 4,
-  },
-  centerAction: {
-    marginLeft: 12,
-  },
-  directionsText: {
-    fontSize: 12,
-    color: COLORS.primary,
-    fontWeight: '600',
-  },
-  noCentersContainer: {
-    padding: 40,
-    alignItems: 'center',
-  },
-  noCentersIcon: {
-    fontSize: 48,
-    marginBottom: 16,
-  },
-  noCentersText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
-    marginBottom: 8,
-  },
-  noCentersSubtext: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-  },
-});

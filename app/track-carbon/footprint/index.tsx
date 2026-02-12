@@ -1,29 +1,8 @@
 import { useCarbon } from '@/context/CarbonContext';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, StatusBar } from 'react-native';
+import { Alert, ScrollView, Text, TextInput, TouchableOpacity, View, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
-// Colors from UI/UX Guide
-const COLORS = {
-  primary: '#10B981',
-  primaryDark: '#047857',
-  primaryLight: '#D1FAE5',
-  warning: '#F59E0B',
-  warningLight: '#FEF3C7',
-  background: '#F9FAFB',
-  card: '#FFFFFF',
-  textPrimary: '#1F2937',
-  textSecondary: '#6B7280',
-  border: '#E5E7EB',
-  plastic: '#3B82F6',
-  metal: '#6B7280',
-  paper: '#92400E',
-  glass: '#14B8A6',
-  organic: '#10B981',
-  ewaste: '#8B5CF6',
-  white: '#FFFFFF',
-};
 
 // Material emission factors (kg CO2 per kg)
 const EMISSION_FACTORS = {
@@ -90,98 +69,92 @@ export default function FootprintScreen() {
 
   const getCategoryColor = (category: string) => {
     switch (category) {
-      case 'plastic': return COLORS.plastic;
-      case 'metal': return COLORS.metal;
-      case 'paper': return COLORS.paper;
-      case 'glass': return COLORS.glass;
-      case 'organic': return COLORS.organic;
-      case 'ewaste': return COLORS.ewaste;
-      default: return COLORS.primary;
+      case 'plastic': return '#3B82F6';
+      case 'metal': return '#6B7280';
+      case 'paper': return '#92400E';
+      case 'glass': return '#14B8A6';
+      case 'organic': return '#10B981';
+      case 'ewaste': return '#8B5CF6';
+      default: return '#10B981';
     }
   };
 
   const selectedData = EMISSION_FACTORS[selectedMaterial as keyof typeof EMISSION_FACTORS];
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+    <SafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
       <StatusBar barStyle="dark-content" />
       {/* Custom Header */}
-      <View style={styles.header}>
+      <View className="flex-row items-center px-4 py-3 bg-white border-b border-border">
         <TouchableOpacity
-          style={styles.backButton}
+          className="flex-row items-center py-2"
           onPress={() => router.back()}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Text style={styles.backArrow}>←</Text>
-          <Text style={styles.backText}>BACK</Text>
+          <Text className="text-xl text-primary font-semibold mr-1">←</Text>
+          <Text className="text-base font-semibold text-primary">BACK</Text>
         </TouchableOpacity>
       </View>
       <ScrollView 
-        style={styles.scrollView}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.content}
+        contentContainerStyle={{ padding: 16 }}
       >
         {/* Info Card */}
-        <View style={styles.infoCard}>
-          <Text style={styles.infoIcon}>🏭</Text>
-          <View style={styles.infoContent}>
-            <Text style={styles.infoTitle}>Calculate Emissions</Text>
-            <Text style={styles.infoText}>
+        <View className="flex-row items-center bg-warningLight rounded-xl p-4 mb-5 border-2 border-amber-500">
+          <Text className="text-3xl mr-3.5">🏭</Text>
+          <View className="flex-1">
+            <Text className="text-base font-semibold text-textPrimary mb-1">Calculate Emissions</Text>
+            <Text className="text-xs text-textSecondary leading-[18px]">
               Enter the material type and weight to calculate potential carbon emissions if thrown away.
             </Text>
           </View>
         </View>
 
         {/* Material Selector */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Select Material</Text>
+        <View className="mb-5">
+          <Text className="text-base font-semibold text-textPrimary mb-3">Select Material</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <View style={styles.chipContainer}>
+            <View className="flex-row flex-wrap gap-2">
               {MATERIALS.slice(0, 8).map((material) => (
                 <TouchableOpacity
                   key={material}
-                  style={[
-                    styles.chip,
-                    selectedMaterial === material && { backgroundColor: getCategoryColor(EMISSION_FACTORS[material as keyof typeof EMISSION_FACTORS].category) },
-                  ]}
+                  className={`px-3.5 py-2 rounded-full ${selectedMaterial === material ? '' : 'bg-card border border-border'}`}
+                  style={selectedMaterial === material ? { backgroundColor: getCategoryColor(EMISSION_FACTORS[material as keyof typeof EMISSION_FACTORS].category) } : {}}
                   onPress={() => setSelectedMaterial(material)}
                 >
-                  <Text style={[
-                    styles.chipText,
-                    selectedMaterial === material && styles.chipTextActive,
-                  ]}>
+                  <Text className={`text-xs ${selectedMaterial === material ? 'text-white font-semibold' : 'text-textSecondary'}`}>
                     {material}
                   </Text>
                 </TouchableOpacity>
               ))}
             </View>
           </ScrollView>
-          <Text style={styles.selectedInfo}>
+          <Text className="text-xs text-textSecondary mt-2 italic">
             Emission factor: {selectedData.factor} kg CO₂/kg
           </Text>
         </View>
 
         {/* Input Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Enter Details</Text>
-          <View style={styles.inputRow}>
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Weight (kg)</Text>
+        <View className="mb-5">
+          <Text className="text-base font-semibold text-textPrimary mb-3">Enter Details</Text>
+          <View className="flex-row gap-3">
+            <View className="flex-1">
+              <Text className="text-xs font-medium text-textSecondary mb-1.5">Weight (kg)</Text>
               <TextInput
-                style={styles.input}
+                className="bg-card rounded-xl px-4 py-3.5 text-sm border border-border"
                 placeholder="0.0"
-                placeholderTextColor={COLORS.textSecondary}
+                placeholderTextColor="#6B7280"
                 keyboardType="decimal-pad"
                 value={weight}
                 onChangeText={setWeight}
               />
             </View>
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Quantity</Text>
+            <View className="flex-1">
+              <Text className="text-xs font-medium text-textSecondary mb-1.5">Quantity</Text>
               <TextInput
-                style={styles.input}
+                className="bg-card rounded-xl px-4 py-3.5 text-sm border border-border"
                 placeholder="1"
-                placeholderTextColor={COLORS.textSecondary}
+                placeholderTextColor="#6B7280"
                 keyboardType="number-pad"
                 value={quantity}
                 onChangeText={setQuantity}
@@ -191,19 +164,19 @@ export default function FootprintScreen() {
         </View>
 
         {/* Calculate Button */}
-        <TouchableOpacity style={styles.calculateButton} onPress={calculateFootprint} activeOpacity={0.9}>
-          <Text style={styles.calculateButtonText}>Calculate Footprint</Text>
+        <TouchableOpacity className="bg-amber-500 rounded-xl py-4 items-center mb-5" onPress={calculateFootprint} activeOpacity={0.9}>
+          <Text className="text-base font-semibold text-white">Calculate Footprint</Text>
         </TouchableOpacity>
 
         {/* Save Button */}
         {result && result.emissions > 0 && (
           <TouchableOpacity 
-            style={[styles.saveButton, isSaved && styles.saveButtonSaved]} 
+            className={`rounded-xl py-4 items-center mb-5 ${isSaved ? 'bg-primaryLight border border-primary' : 'bg-primary'}`}
             onPress={saveFootprint}
             disabled={isSaved}
             activeOpacity={0.9}
           >
-            <Text style={[styles.saveButtonText, isSaved && styles.saveButtonTextSaved]}>
+            <Text className={`text-base font-semibold ${isSaved ? 'text-primaryDark' : 'text-white'}`}>
               {isSaved ? '✓ Saved to Dashboard' : 'Save to Dashboard'}
             </Text>
           </TouchableOpacity>
@@ -211,15 +184,15 @@ export default function FootprintScreen() {
 
         {/* Result Card */}
         {result && result.emissions > 0 && (
-          <View style={styles.resultCard}>
-            <Text style={styles.resultTitle}>Estimated Emissions</Text>
-            <Text style={styles.resultValue}>{result.emissions.toFixed(3)} kg CO₂</Text>
-            <Text style={styles.resultEquivalent}>
+          <View className="bg-card rounded-2xl p-5 items-center shadow-sm shadow-black/5 elevation-2">
+            <Text className="text-sm text-textSecondary mb-2">Estimated Emissions</Text>
+            <Text className="text-[36px] font-bold text-amber-500 mb-2">{result.emissions.toFixed(3)} kg CO₂</Text>
+            <Text className="text-xs text-textSecondary text-center mb-4">
               Equivalent to: {result.equivalent}
             </Text>
-            <View style={styles.tipCard}>
-              <Text style={styles.tipIcon}>💡</Text>
-              <Text style={styles.tipText}>
+            <View className="flex-row items-center bg-primaryLight rounded-xl p-3 w-full">
+              <Text className="text-lg mr-2.5">💡</Text>
+              <Text className="flex-1 text-xs text-primaryDark">
                 Recycle this item to save up to {((result.emissions * 0.7)).toFixed(3)} kg CO₂!
               </Text>
             </View>
@@ -227,239 +200,8 @@ export default function FootprintScreen() {
         )}
 
         {/* Bottom Spacer */}
-        <View style={styles.bottomSpacer} />
+        <View className="h-10" />
       </ScrollView>
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  // Custom Header
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: COLORS.white,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-  },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 8,
-  },
-  backArrow: {
-    fontSize: 20,
-    color: COLORS.primary,
-    fontWeight: '600',
-    marginRight: 4,
-  },
-  backText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.primary,
-    fontFamily: 'Poppins',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  content: {
-    padding: 16,
-  },
-  // Info Card
-  infoCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.warningLight,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 20,
-    borderWidth: 2,
-    borderColor: COLORS.warning,
-  },
-  infoIcon: {
-    fontSize: 32,
-    marginRight: 14,
-  },
-  infoContent: {
-    flex: 1,
-  },
-  infoTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
-    fontFamily: 'Poppins',
-    marginBottom: 4,
-  },
-  infoText: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
-    fontFamily: 'Poppins',
-    lineHeight: 18,
-  },
-  // Section
-  section: {
-    marginBottom: 20,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
-    fontFamily: 'Poppins',
-    marginBottom: 12,
-  },
-  // Material Chips
-  chipContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  chip: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: COLORS.card,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  chipActive: {
-    backgroundColor: COLORS.primary,
-  },
-  chipText: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
-    fontFamily: 'Poppins',
-  },
-  chipTextActive: {
-    color: '#FFFFFF',
-    fontWeight: '600',
-  },
-  selectedInfo: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
-    fontFamily: 'Poppins',
-    marginTop: 8,
-    fontStyle: 'italic',
-  },
-  // Input Section
-  inputRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  inputGroup: {
-    flex: 1,
-  },
-  inputLabel: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: COLORS.textSecondary,
-    fontFamily: 'Poppins',
-    marginBottom: 6,
-  },
-  input: {
-    backgroundColor: COLORS.card,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 16,
-    color: COLORS.textPrimary,
-    fontFamily: 'Poppins',
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  // Calculate Button
-  calculateButton: {
-    backgroundColor: COLORS.warning,
-    borderRadius: 14,
-    paddingVertical: 16,
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  calculateButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-    fontFamily: 'Poppins',
-  },
-  // Result Card
-  resultCard: {
-    backgroundColor: COLORS.card,
-    borderRadius: 20,
-    padding: 20,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  resultTitle: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-    fontFamily: 'Poppins',
-    marginBottom: 8,
-  },
-  resultValue: {
-    fontSize: 36,
-    fontWeight: '700',
-    color: COLORS.warning,
-    fontFamily: 'Poppins',
-    marginBottom: 8,
-  },
-  resultEquivalent: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
-    fontFamily: 'Poppins',
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  tipCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.primaryLight,
-    borderRadius: 12,
-    padding: 12,
-    width: '100%',
-  },
-  tipIcon: {
-    fontSize: 20,
-    marginRight: 10,
-  },
-  tipText: {
-    flex: 1,
-    fontSize: 13,
-    color: COLORS.primaryDark,
-    fontFamily: 'Poppins',
-  },
-  // Save Button
-  saveButton: {
-    backgroundColor: COLORS.primary,
-    borderRadius: 14,
-    paddingVertical: 16,
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  saveButtonSaved: {
-    backgroundColor: COLORS.primaryLight,
-    borderWidth: 1,
-    borderColor: COLORS.primary,
-  },
-  saveButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-    fontFamily: 'Poppins',
-  },
-  saveButtonTextSaved: {
-    color: COLORS.primaryDark,
-  },
-  // Bottom Spacer
-  bottomSpacer: {
-    height: 40,
-  },
-});

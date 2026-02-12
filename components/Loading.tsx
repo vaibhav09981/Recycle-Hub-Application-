@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { Image } from 'expo-image';
 
 interface LoadingProps {
@@ -25,57 +25,21 @@ export default function Loading({ onLoadingComplete }: LoadingProps) {
   }, [onLoadingComplete]);
 
   return (
-    <View style={styles.container}>
+    <View className="flex-1 justify-center items-center bg-white">
       {/* App Logo */}
       <Image
         source={require('@/assets/recyclehub_icon.png')}
-        style={styles.logo}
+        className="w-25 h-25 mb-10"
         contentFit="contain"
       />
       
       {/* Loading Animation */}
-      <View style={styles.loadingContainer}>
-        <View style={styles.progressBarBackground}>
-          <View style={[styles.progressBarFill, { width: `${percentage}%` }]} />
+      <View className="items-center w-[80%]">
+        <View className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden mb-4">
+          <View className="h-full bg-primary rounded-full" style={{ width: `${percentage}%` }} />
         </View>
-        <Text style={styles.text}>Loading... {percentage}%</Text>
+        <Text className="text-sm text-gray-500">Loading... {percentage}%</Text>
       </View>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
-  },
-  logo: {
-    width: 100,
-    height: 100,
-    marginBottom: 40,
-  },
-  loadingContainer: {
-    alignItems: 'center',
-    width: '80%',
-  },
-  progressBarBackground: {
-    width: '100%',
-    height: 6,
-    backgroundColor: '#E5E7EB',
-    borderRadius: 3,
-    marginBottom: 16,
-    overflow: 'hidden',
-  },
-  progressBarFill: {
-    height: '100%',
-    backgroundColor: '#10B981',
-    borderRadius: 3,
-  },
-  text: {
-    fontSize: 14,
-    color: '#6B7280',
-    fontFamily: 'Poppins',
-  },
-});
