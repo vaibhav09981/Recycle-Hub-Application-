@@ -1,8 +1,9 @@
 import { useAuth } from '@/context/AuthContext';
-import { ScannedItem, useJournal } from '@/context/JournalContext';
+import { useCarbon } from '@/context/CarbonContext';
+import { useJournal, ScannedItem } from '@/context/JournalContext';
 import { useRouter } from 'expo-router';
-import React, { useMemo, useState } from 'react';
-import { Animated, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useState, useMemo } from 'react';
+import { ScrollView, Text, TouchableOpacity, View, StyleSheet, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Colors from UI/UX Guide
@@ -61,6 +62,10 @@ const badgeDefinitions: BadgeDefinition[] = [
 
 // Progress Ring Component
 function ProgressRing({ progress, color, size = 80, strokeWidth = 8 }: { progress: number; color: string; size?: number; strokeWidth?: number }) {
+  const radius = (size - strokeWidth) / 2;
+  const circumference = radius * 2 * Math.PI;
+  const strokeDashoffset = circumference - (progress / 100) * circumference;
+
   return (
     <View style={{ width: size, height: size, transform: [{ rotate: '-90deg' }] }}>
       <View style={{ width: size, height: size, borderRadius: size / 2, borderWidth: strokeWidth, borderColor: '#E5E7EB' }}>
@@ -133,6 +138,7 @@ function calculateConsecutiveDays(items: ScannedItem[]): number {
 
 export default function ProfileScreen() {
   const { user, session, signOut } = useAuth();
+  const { totalFootprint, totalSavings, carbonHistory } = useCarbon();
   const { scannedItems, getTotalCarbonSaved, scannedCartCount } = useJournal();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'impact' | 'badges' | 'history'>('impact');
@@ -157,7 +163,7 @@ export default function ProfileScreen() {
       consecutiveDays: calculateConsecutiveDays(scannedItems),
       sharesCount: 0, // Would track from sharing feature
     };
-  }, [scannedItems, getTotalCarbonSaved]);
+  }, [scannedItems, getTotalCarbonSaved()]);
 
   // Calculate earned badges dynamically
   const earnedBadges = useMemo(() => {
@@ -219,6 +225,18 @@ export default function ProfileScreen() {
     : 0;
   
   const badgesEarned = earnedBadges.filter(b => b.earned).length;
+  const badgesInProgress = earnedBadges.filter((b) => {
+    if (b.earned) return false;
+    const def = badgeDefinitions.find(d => d.id === b.id);
+    return def ? def.criteria({ ...userStats, 
+      totalItemsScanned: userStats.totalItemsScanned + 1,
+      totalItemsRecycled: userStats.totalItemsRecycled + 1,
+      totalCo2Saved: userStats.totalCo2Saved + 0.5,
+      totalWaterSaved: userStats.totalWaterSaved + 5,
+      totalEnergySaved: userStats.totalEnergySaved + 0.5,
+      greenPoints: userStats.greenPoints + 10,
+    }) : false;
+  }).length;
 
   // Format date for display
   const formatDate = (dateString: string) => {

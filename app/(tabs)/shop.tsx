@@ -1,6 +1,6 @@
 import { useCart } from '@/context/CartContext';
 import React, { useState } from 'react';
-import { Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Colors
@@ -45,7 +45,7 @@ const products: Product[] = [
 const categories = ['All', 'Personal Care', 'Home', 'Kitchen', 'Accessories', 'Stationery', 'Electronics'];
 
 export default function ShopScreen() {
-  const { addMultipleToCart } = useCart();
+  const { addToCart, addMultipleToCart } = useCart();
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [quantity, setQuantity] = useState(1);
