@@ -1,6 +1,6 @@
 import { Colors } from '@/constants/theme';
 import React, { useState } from 'react';
-import { Alert, Button, StyleSheet, Text, View } from 'react-native';
+import { Alert, Button, Text, View, TouchableOpacity } from 'react-native';
 
 export default function DailyChallenge() {
   const [clicked, setClicked] = useState(false);
@@ -11,40 +11,18 @@ export default function DailyChallenge() {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Daily Challenge</Text>
-      <Text style={styles.description}>Complete today's challenge to earn rewards!</Text>
-      <View style={styles.buttonContainer}>
-        <Button
-          title="View Rewards"
+    <View className="p-5 bg-background rounded-xl mx-2.5">
+      <Text className="text-xl font-bold mb-2.5" style={{ color: Colors.light.text }}>Daily Challenge</Text>
+      <Text className="text-base mb-5" style={{ color: Colors.light.textSecondary }}>Complete today&apos;s challenge to earn rewards!</Text>
+      <View className="rounded-lg overflow-hidden">
+        <TouchableOpacity
+          className="py-3 px-4 items-center"
+          style={{ backgroundColor: Colors.light.primary }}
           onPress={handleViewRewards}
-          color={Colors.light.primary}
-        />
+        >
+          <Text className="text-base font-semibold text-white">View Rewards</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    padding: 20,
-    backgroundColor: '#f0f0f0',
-    margin: 10,
-    borderRadius: 10,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    color: Colors.light.text,
-  },
-  description: {
-    fontSize: 16,
-    marginBottom: 20,
-    color: Colors.light.textSecondary,
-  },
-  buttonContainer: {
-    borderRadius: 8,
-    overflow: 'hidden',
-  },
-});

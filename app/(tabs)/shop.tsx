@@ -1,24 +1,7 @@
 import { useCart } from '@/context/CartContext';
 import React, { useState } from 'react';
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View, Modal } from 'react-native';
+import { Image, ScrollView, Text, TouchableOpacity, View, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
-// Colors
-const COLORS = {
-  primary: '#10B981',
-  primaryDark: '#047857',
-  primaryLight: '#D1FAE5',
-  background: '#F9FAFB',
-  card: '#FFFFFF',
-  textPrimary: '#1F2937',
-  textSecondary: '#6B7280',
-  textTertiary: '#9CA3AF',
-  border: '#E5E7EB',
-  warning: '#F59E0B',
-  error: '#EF4444',
-  success: '#22C55E',
-  info: '#3B82F6',
-};
 
 interface Product {
   id: number;
@@ -44,8 +27,16 @@ const products: Product[] = [
 
 const categories = ['All', 'Personal Care', 'Home', 'Kitchen', 'Accessories', 'Stationery', 'Electronics'];
 
+const renderStars = (rating: number, size: number = 12) => (
+  <View className="flex-row mb-2">
+    {Array.from({ length: 5 }, (_, i) => (
+      <Text key={i} className={`${i < rating ? 'text-warning' : 'text-border'}`} style={{ fontSize: size, marginRight: 1 }}>★</Text>
+    ))}
+  </View>
+);
+
 export default function ShopScreen() {
-  const { addToCart, addMultipleToCart } = useCart();
+  const { addMultipleToCart } = useCart();
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [quantity, setQuantity] = useState(1);
@@ -53,14 +44,6 @@ export default function ShopScreen() {
   const filteredProducts = selectedCategory === 'All'
     ? products
     : products.filter(p => p.category === selectedCategory);
-
-  const renderStars = (rating: number, size: number = 12) => (
-    <View style={styles.starsRow}>
-      {Array.from({ length: 5 }, (_, i) => (
-        <Text key={i} style={[styles.star, { fontSize: size }, i < rating && styles.starActive]}>★</Text>
-      ))}
-    </View>
-  );
 
   const openProduct = (product: Product) => {
     setSelectedProduct(product);
@@ -86,111 +69,108 @@ export default function ShopScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+    <SafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
       {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Eco Shop</Text>
-        <Text style={styles.headerSubtitle}>Sustainable products for a better planet</Text>
+      <View className="px-4 pt-4 pb-3">
+        <Text className="text-3xl font-bold text-textPrimary font-poppins">Eco Shop</Text>
+        <Text className="text-sm text-textSecondary font-poppins mt-1">Sustainable products for a better planet</Text>
       </View>
 
       {/* Category Navbar */}
-      <View style={styles.categoryNavbar}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryList}>
+      <View className="bg-card py-3 border-b border-border">
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 2 }}>
           {categories.map((cat) => (
             <TouchableOpacity
               key={cat}
-              style={[styles.categoryTab, selectedCategory === cat && styles.categoryTabActive]}
+              className={`px-4 py-2 rounded-lg ${selectedCategory === cat ? 'bg-primary' : 'bg-background border border-border'}`}
               onPress={() => setSelectedCategory(cat)}
             >
-              <Text style={[styles.categoryTabText, selectedCategory === cat && styles.categoryTabTextActive]}>{cat}</Text>
+              <Text className={`text-sm font-medium ${selectedCategory === cat ? 'text-white' : 'text-textSecondary'} font-poppins`}>{cat}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
       </View>
 
       {/* Product Grid */}
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        <View style={styles.productGrid}>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <View className="flex-row flex-wrap px-4 pt-4 gap-3">
           {filteredProducts.map((product) => (
-            <TouchableOpacity key={product.id} style={styles.productCard} onPress={() => openProduct(product)}>
-              <View style={styles.productImageContainer}>
-                <Image source={product.image} style={styles.productImage} resizeMode="cover" />
-                <View style={styles.ecoBadge}><Text style={styles.ecoBadgeText}>🌱</Text></View>
+            <TouchableOpacity key={product.id} className="w-[47%] bg-card rounded-2xl p-3 shadow-sm" onPress={() => openProduct(product)}>
+              <View className="w-full aspect-square rounded-xl overflow-hidden mb-2.5 bg-primaryLight">
+                <Image source={product.image} className="w-full h-full" resizeMode="cover" />
+                <View className="absolute top-2 right-2 w-6 h-6 rounded-full bg-white items-center justify-center">
+                  <Text className="text-xs">🌱</Text>
+                </View>
               </View>
-              <View style={styles.productInfo}>
-                <Text style={styles.productCategory}>{product.category}</Text>
-                <Text style={styles.productName} numberOfLines={2}>{product.name}</Text>
+              <View>
+                <Text className="text-[10px] text-primary font-poppins mb-0.5 font-medium uppercase tracking-wide">{product.category}</Text>
+                <Text className="text-sm font-semibold text-textPrimary font-poppins mb-1.5" numberOfLines={2}>{product.name}</Text>
                 {renderStars(product.ecoRating, 10)}
-                <View style={styles.productFooter}>
-                  <Text style={styles.productPrice}>${product.price.toFixed(2)}</Text>
-                  <View style={styles.addCircle}><Text style={styles.addText}>+</Text></View>
+                <View className="flex-row justify-between items-center mt-1">
+                  <Text className="text-lg font-bold text-primary font-poppins">${product.price.toFixed(2)}</Text>
+                  <View className="w-8 h-8 rounded-full bg-primary items-center justify-center">
+                    <Text className="text-lg text-white font-semibold -mt-1">+</Text>
+                  </View>
                 </View>
               </View>
             </TouchableOpacity>
           ))}
         </View>
-        <View style={styles.bottomSpacer} />
+        <View className="h-24" />
       </ScrollView>
 
       {/* Product Detail Modal */}
       <Modal visible={!!selectedProduct} animationType="slide" transparent onRequestClose={closeProduct}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+        <View className="flex-1 bg-black/50">
+          <View className="absolute bottom-0 left-0 right-0 max-h-[85%] bg-white rounded-t-3xl overflow-hidden">
             {selectedProduct && (
               <>
-                <View style={styles.modalHeader}>
-                  <TouchableOpacity onPress={closeProduct}><Text style={styles.closeBtn}>✕</Text></TouchableOpacity>
-                  <Text style={styles.modalTitle}>Product Details</Text>
-                  <View style={styles.modalHeaderRight} />
+                <View className="flex-row items-center justify-between p-4 border-b border-border">
+                  <TouchableOpacity onPress={closeProduct}><Text className="text-xl text-textSecondary p-1">✕</Text></TouchableOpacity>
+                  <Text className="text-lg font-semibold text-textPrimary">Product Details</Text>
+                  <View className="w-8" />
                 </View>
 
-                <ScrollView style={styles.modalScroll}>
-                  {/* Image */}
-                  <View style={styles.modalImageContainer}>
-                    <Image source={selectedProduct.image} style={styles.modalImage} resizeMode="cover" />
+                <ScrollView className="max-h-[85%]">
+                  <View className="w-full h-64 bg-background">
+                    <Image source={selectedProduct.image} className="w-full h-full" resizeMode="cover" />
                   </View>
 
-                  {/* Info */}
-                  <View style={styles.modalInfo}>
-                    <Text style={styles.modalCategory}>{selectedProduct.category}</Text>
-                    <Text style={styles.modalName}>{selectedProduct.name}</Text>
-                    
-                    {/* Rating & Reviews */}
-                    <View style={styles.ratingRow}>
+                  <View className="p-4">
+                    <Text className="text-xs text-primary font-semibold uppercase tracking-wide font-poppins">{selectedProduct.category}</Text>
+                    <Text className="text-2xl font-bold text-textPrimary font-poppins mt-1">{selectedProduct.name}</Text>
+
+                    <View className="flex-row items-center mt-2">
                       {renderStars(selectedProduct.ecoRating, 16)}
-                      <Text style={styles.reviewText}>({selectedProduct.reviews} reviews)</Text>
+                      <Text className="text-sm text-textSecondary ml-2">({selectedProduct.reviews} reviews)</Text>
                     </View>
 
-                    {/* Price */}
-                    <Text style={styles.modalPrice}>${selectedProduct.price.toFixed(2)}</Text>
+                    <Text className="text-3xl font-bold text-primary font-poppins mt-3">${selectedProduct.price.toFixed(2)}</Text>
 
-                    <View style={styles.divider} />
+                    <View className="h-px bg-border my-4" />
 
-                    {/* Description */}
-                    <Text style={styles.sectionLabel}>Description</Text>
-                    <Text style={styles.description}>{selectedProduct.description}</Text>
+                    <Text className="text-sm font-semibold text-textPrimary mb-2">Description</Text>
+                    <Text className="text-sm text-textSecondary leading-6 font-poppins">{selectedProduct.description}</Text>
 
-                    <View style={styles.divider} />
+                    <View className="h-px bg-border my-4" />
 
-                    {/* Quantity Selector */}
-                    <Text style={styles.sectionLabel}>Quantity</Text>
-                    <View style={styles.quantityRow}>
-                      <TouchableOpacity style={styles.qtyBtn} onPress={() => setQuantity(Math.max(1, quantity - 1))}>
-                        <Text style={styles.qtyBtnText}>-</Text>
+                    <Text className="text-sm font-semibold text-textPrimary mb-2">Quantity</Text>
+                    <View className="flex-row items-center gap-3">
+                      <TouchableOpacity className="w-10 h-10 rounded-lg bg-background border border-border items-center justify-center" onPress={() => setQuantity(Math.max(1, quantity - 1))}>
+                        <Text className="text-xl font-semibold text-textPrimary">-</Text>
                       </TouchableOpacity>
-                      <Text style={styles.qtyValue}>{quantity}</Text>
-                      <TouchableOpacity style={styles.qtyBtn} onPress={() => setQuantity(quantity + 1)}>
-                        <Text style={styles.qtyBtnText}>+</Text>
+                      <Text className="text-lg font-semibold text-textPrimary w-10 text-center">{quantity}</Text>
+                      <TouchableOpacity className="w-10 h-10 rounded-lg bg-background border border-border items-center justify-center" onPress={() => setQuantity(quantity + 1)}>
+                        <Text className="text-xl font-semibold text-textPrimary">+</Text>
                       </TouchableOpacity>
-                      <Text style={styles.totalPrice}>Total: ${(selectedProduct.price * quantity).toFixed(2)}</Text>
+                      <Text className="text-base font-semibold text-primary ml-auto">Total: ${(selectedProduct.price * quantity).toFixed(2)}</Text>
                     </View>
                   </View>
                 </ScrollView>
 
-                {/* Add to Cart Button */}
-                <View style={styles.modalFooter}>
-                  <TouchableOpacity style={styles.addToCartBtn} onPress={handleAddToCart}>
-                    <Text style={styles.addToCartText}>Add to Cart</Text>
+                <View className="p-4 border-t border-border">
+                  <TouchableOpacity className="bg-primary py-4 rounded-xl items-center" onPress={handleAddToCart}>
+                    <Text className="text-base font-bold text-white font-poppins">Add to Cart</Text>
                   </TouchableOpacity>
                 </View>
               </>
@@ -201,62 +181,3 @@ export default function ShopScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
-  header: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12 },
-  headerTitle: { fontSize: 28, fontWeight: '700', color: COLORS.textPrimary, fontFamily: 'Poppins' },
-  headerSubtitle: { fontSize: 14, color: COLORS.textSecondary, fontFamily: 'Poppins', marginTop: 4 },
-  categoryNavbar: { backgroundColor: COLORS.card, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: COLORS.border },
-  categoryList: { paddingHorizontal: 16, gap: 8 },
-  categoryTab: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, backgroundColor: COLORS.background, borderWidth: 1, borderColor: COLORS.border },
-  categoryTabActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
-  categoryTabText: { fontSize: 13, fontWeight: '500', color: COLORS.textSecondary, fontFamily: 'Poppins' },
-  categoryTabTextActive: { color: '#FFFFFF' },
-  scrollView: { flex: 1 },
-  productGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 16, paddingTop: 16, gap: 12 },
-  productCard: { width: '47%', backgroundColor: COLORS.card, borderRadius: 16, padding: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
-  productImageContainer: { width: '100%', aspectRatio: 1, borderRadius: 12, overflow: 'hidden', marginBottom: 10, backgroundColor: COLORS.primaryLight },
-  productImage: { width: '100%', height: '100%' },
-  ecoBadge: { position: 'absolute', top: 8, right: 8, width: 24, height: 24, borderRadius: 12, backgroundColor: COLORS.card, alignItems: 'center', justifyContent: 'center' },
-  ecoBadgeText: { fontSize: 12 },
-  productInfo: { paddingHorizontal: 2 },
-  productCategory: { fontSize: 10, color: COLORS.primary, fontFamily: 'Poppins', marginBottom: 2, fontWeight: '500', textTransform: 'uppercase', letterSpacing: 0.5 },
-  productName: { fontSize: 14, fontWeight: '600', color: COLORS.textPrimary, fontFamily: 'Poppins', marginBottom: 6 },
-  starsRow: { flexDirection: 'row', marginBottom: 8 },
-  star: { fontSize: 12, color: COLORS.border, marginRight: 1 },
-  starActive: { color: COLORS.warning },
-  productFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 },
-  productPrice: { fontSize: 18, fontWeight: '700', color: COLORS.primary, fontFamily: 'Poppins' },
-  addCircle: { width: 32, height: 32, borderRadius: 16, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center' },
-  addText: { fontSize: 18, color: '#FFFFFF', fontWeight: '600', marginTop: -2 },
-  bottomSpacer: { height: 100 },
-
-  // Modal
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' },
-  modalContent: { position: 'absolute', bottom: 0, left: 0, right: 0, maxHeight: '85%', backgroundColor: COLORS.card, borderTopLeftRadius: 24, borderTopRightRadius: 24 },
-  modalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderBottomColor: COLORS.border },
-  closeBtn: { fontSize: 20, color: COLORS.textSecondary, padding: 4 },
-  modalTitle: { fontSize: 18, fontWeight: '600', color: COLORS.textPrimary },
-  modalHeaderRight: { width: 32 },
-  modalScroll: { maxHeight: '85%' },
-  modalImageContainer: { width: '100%', height: 250, backgroundColor: COLORS.background },
-  modalImage: { width: '100%', height: '100%' },
-  modalInfo: { padding: 16 },
-  modalCategory: { fontSize: 12, color: COLORS.primary, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 1 },
-  modalName: { fontSize: 22, fontWeight: '700', color: COLORS.textPrimary, marginTop: 4, fontFamily: 'Poppins' },
-  ratingRow: { flexDirection: 'row', alignItems: 'center', marginTop: 8 },
-  reviewText: { fontSize: 14, color: COLORS.textSecondary, marginLeft: 8 },
-  modalPrice: { fontSize: 26, fontWeight: '700', color: COLORS.primary, marginTop: 12, fontFamily: 'Poppins' },
-  divider: { height: 1, backgroundColor: COLORS.border, marginVertical: 16 },
-  sectionLabel: { fontSize: 14, fontWeight: '600', color: COLORS.textPrimary, marginBottom: 8 },
-  description: { fontSize: 14, color: COLORS.textSecondary, lineHeight: 22 },
-  quantityRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  qtyBtn: { width: 40, height: 40, borderRadius: 10, backgroundColor: COLORS.background, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: COLORS.border },
-  qtyBtnText: { fontSize: 20, fontWeight: '600', color: COLORS.textPrimary },
-  qtyValue: { fontSize: 18, fontWeight: '600', color: COLORS.textPrimary, minWidth: 40, textAlign: 'center' },
-  totalPrice: { fontSize: 16, fontWeight: '600', color: COLORS.primary, marginLeft: 'auto' },
-  modalFooter: { padding: 16, borderTopWidth: 1, borderTopColor: COLORS.border },
-  addToCartBtn: { backgroundColor: COLORS.primary, paddingVertical: 16, borderRadius: 12, alignItems: 'center' },
-  addToCartText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700', fontFamily: 'Poppins' },
-});

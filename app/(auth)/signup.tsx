@@ -1,18 +1,7 @@
-import { Colors } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { Link, router } from 'expo-router';
 import React, { useState } from 'react';
-import {
-    Alert,
-    Image,
-    KeyboardAvoidingView,
-    Platform,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
-} from 'react-native';
+import { Alert, Image, KeyboardAvoidingView, Platform, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function SignupScreen() {
   const [name, setName] = useState('');
@@ -51,36 +40,29 @@ export default function SignupScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <View style={styles.content}>
-        <View style={styles.header}>
+    <KeyboardAvoidingView className="flex-1 bg-background" behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <View className="flex-1 px-6">
+        <View className="pt-15 mb-5">
           <Link href="/(auth)/login" asChild>
-            <TouchableOpacity style={styles.backButton}>
-              <Text style={styles.backButtonText}>← Back</Text>
+            <TouchableOpacity className="py-2">
+              <Text className="text-base text-primary">← Back</Text>
             </TouchableOpacity>
           </Link>
         </View>
 
-        <View style={styles.logoContainer}>
-          <Image 
-            source={require('@/assets/recyclehub_icon.png')}
-            style={styles.logoImage}
-            resizeMode="contain"
-          />
-          <View style={styles.titleRow}>
-            <Text style={styles.titleRecycle}>Recycle</Text>
-            <Text style={styles.titleHub}>Hub</Text>
+        <View className="items-center mb-6">
+          <Image source={require('@/assets/recyclehub_icon.png')} className="w-20 h-20 mb-2" resizeMode="contain" />
+          <View className="flex-row items-center mb-2">
+            <Text className="text-3xl font-bold text-primary">Recycle</Text>
+            <Text className="text-3xl font-bold text-black">Hub</Text>
           </View>
-          <Text style={styles.subtitle}>Join RecycleHub and start recycling!</Text>
+          <Text className="text-sm text-textSecondary text-center">Join RecycleHub and start recycling!</Text>
         </View>
 
-        <View style={styles.formContainer}>
-          <Text style={styles.label}>Full Name</Text>
+        <View className="w-full">
+          <Text className="text-sm font-semibold text-textPrimary mb-2">Full Name</Text>
           <TextInput
-            style={styles.input}
+            className="w-full p-4 rounded-xl border border-border bg-card text-base text-textPrimary mb-4"
             placeholder="Enter your full name"
             placeholderTextColor="#9CA3AF"
             value={name}
@@ -88,9 +70,9 @@ export default function SignupScreen() {
             autoCapitalize="words"
           />
 
-          <Text style={styles.label}>Email</Text>
+          <Text className="text-sm font-semibold text-textPrimary mb-2">Email</Text>
           <TextInput
-            style={styles.input}
+            className="w-full p-4 rounded-xl border border-border bg-card text-base text-textPrimary mb-4"
             placeholder="Enter your email"
             placeholderTextColor="#9CA3AF"
             value={email}
@@ -99,9 +81,9 @@ export default function SignupScreen() {
             autoCapitalize="none"
           />
 
-          <Text style={styles.label}>Password</Text>
+          <Text className="text-sm font-semibold text-textPrimary mb-2">Password</Text>
           <TextInput
-            style={styles.input}
+            className="w-full p-4 rounded-xl border border-border bg-card text-base text-textPrimary mb-4"
             placeholder="Create a password"
             placeholderTextColor="#9CA3AF"
             value={password}
@@ -109,9 +91,9 @@ export default function SignupScreen() {
             secureTextEntry
           />
 
-          <Text style={styles.label}>Confirm Password</Text>
+          <Text className="text-sm font-semibold text-textPrimary mb-2">Confirm Password</Text>
           <TextInput
-            style={styles.input}
+            className="w-full p-4 rounded-xl border border-border bg-card text-base text-textPrimary mb-4"
             placeholder="Confirm your password"
             placeholderTextColor="#9CA3AF"
             value={confirmPassword}
@@ -119,21 +101,15 @@ export default function SignupScreen() {
             secureTextEntry
           />
 
-          <TouchableOpacity
-            style={styles.signupButton}
-            onPress={handleSignup}
-            disabled={loading}
-          >
-            <Text style={styles.signupButtonText}>
-              {loading ? 'Creating Account...' : 'Sign Up'}
-            </Text>
+          <TouchableOpacity className="w-full p-4 bg-primary rounded-xl items-center mt-2" onPress={handleSignup} disabled={loading}>
+            <Text className="text-base font-semibold text-white">{loading ? 'Creating Account...' : 'Sign Up'}</Text>
           </TouchableOpacity>
 
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>Already have an account? </Text>
+          <View className="flex-row justify-center mt-6 mb-8">
+            <Text className="text-sm text-textSecondary">Already have an account? </Text>
             <Link href="/(auth)/login" asChild>
               <TouchableOpacity>
-                <Text style={styles.linkText}>Login</Text>
+                <Text className="text-sm text-primary font-semibold">Login</Text>
               </TouchableOpacity>
             </Link>
           </View>
@@ -142,108 +118,3 @@ export default function SignupScreen() {
     </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.light.background,
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 24,
-  },
-  header: {
-    paddingTop: 60,
-    marginBottom: 20,
-  },
-  backButton: {
-    paddingVertical: 8,
-  },
-  backButtonText: {
-    fontSize: 16,
-    color: Colors.light.primary,
-  },
-  logoContainer: {
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  logoImage: {
-    width: 80,
-    height: 80,
-    marginBottom: 8,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: Colors.light.primary,
-    marginBottom: 8,
-  },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  titleRecycle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#10B981',
-  },
-  titleHub: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#000000',
-  },
-  subtitle: {
-    fontSize: 14,
-    color: Colors.light.textSecondary,
-    textAlign: 'center',
-  },
-  formContainer: {
-    width: '100%',
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: Colors.light.text,
-    marginBottom: 8,
-  },
-  input: {
-    width: '100%',
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
-    backgroundColor: Colors.light.surface,
-    fontSize: 16,
-    marginBottom: 16,
-    color: Colors.light.text,
-  },
-  signupButton: {
-    width: '100%',
-    padding: 16,
-    backgroundColor: Colors.light.primary,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  signupButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: 24,
-    marginBottom: 32,
-  },
-  footerText: {
-    fontSize: 14,
-    color: Colors.light.textSecondary,
-  },
-  linkText: {
-    fontSize: 14,
-    color: Colors.light.primary,
-    fontWeight: '600',
-  },
-});
