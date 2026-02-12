@@ -177,10 +177,10 @@ export default function ProfileScreen() {
       <ScrollView showsVerticalScrollIndicator={false}>
         <View className="bg-card px-4 pb-5 items-center">
           <View className="items-center mb-3">
-            <View className="w-22 h-22 rounded-full bg-primary justify-center items-center border-4 border-primaryLight mb-3">
+            <View className="py-2 px-4 rounded-full bg-green-600 justify-center items-center border-2 border-black mb-3">
               <Text className="text-4xl text-white font-bold">{session?.user?.email?.charAt(0).toUpperCase() || 'U'}</Text>
             </View>
-            <View className="bg-primary px-4 py-1 rounded-full">
+            <View className="bg-black px-4 py-1 rounded-full">
               <Text className="text-xs text-white font-semibold">{userImpact.level}</Text>
             </View>
           </View>
@@ -356,10 +356,26 @@ export default function ProfileScreen() {
         )}
 
         <View className="px-4 pt-6 pb-8">
-          <TouchableOpacity className="bg-red-100 py-3.5 rounded-xl items-center border border-red-500" onPress={handleLogout} activeOpacity={0.8}>
-            <Text className="text-base font-semibold text-red-600">Logout</Text>
-          </TouchableOpacity>
-        </View>
+  {user || session ? (
+    <TouchableOpacity
+      className="bg-red-100 py-3.5 rounded-xl items-center border border-red-500"
+      onPress={handleLogout}
+      activeOpacity={0.8}
+    >
+      <Text className="text-base font-semibold text-red-600">Logout</Text>
+    </TouchableOpacity>
+  ) : (
+    <View className="flex-row justify-between gap-3">
+      <TouchableOpacity
+        className="flex-1 bg-green-600 border-2 border-black py-3.5 rounded-xl items-center"
+        onPress={() => router.push('/(auth)/login')}
+        activeOpacity={0.8}
+      >
+        <Text className="text-base font-semibold text-white">Login/Signup</Text>
+      </TouchableOpacity>
+    </View>
+  )}
+</View>
       </ScrollView>
     </SafeAreaView>
   );
