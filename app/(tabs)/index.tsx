@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, StatusBar, Alert, ActivityIndicator, Modal, FlatList } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StatusBar, Alert, ActivityIndicator, Modal, FlatList } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import * as Location from 'expo-location';
@@ -11,7 +11,6 @@ export default function HomeScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const { totalFootprint, totalSavings, carbonHistory } = useCarbon();
-  const [searchQuery, setSearchQuery] = useState('');
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
   const [showCentersModal, setShowCentersModal] = useState(false);
   const [recyclingCenters, setRecyclingCenters] = useState<RecyclingCenter[]>([]);
@@ -139,13 +138,13 @@ export default function HomeScreen() {
               </View>
             </View>
 
-            <TouchableOpacity className="aspect-[1.6] border-2 border-dashed border-primary rounded-xl bg-primaryLight items-center justify-center mb-4" onPress={handleScan} activeOpacity={0.9}>
+            <TouchableOpacity className="py-8 border-2 border-dashed border-primary rounded-xl items-center justify-center mb-4" onPress={handleScan} activeOpacity={0.9}>
               <View className="items-center">
-                <View className="w-16 h-16 rounded-full bg-primary items-center justify-center mb-3">
+                <View className="p-6 bg-green-100 border border-black rounded-full items-center justify-center mb-3">
                   <Text className="text-3xl">📷</Text>
                 </View>
-                <Text className="text-base font-semibold text-primary font-poppins mb-1">Tap to Scan</Text>
-                <Text className="text-xs text-textSecondary font-poppins text-center px-8">Identify recyclability, carbon savings and get action options</Text>
+                <Text className="text-base font-semibold text-black font-poppins mb-1">Tap to Scan</Text>
+                <Text className="text-sm text-textSecondary font-poppins text-center px-8">Identify recyclability, carbon savings and get action options</Text>
               </View>
             </TouchableOpacity>
 
