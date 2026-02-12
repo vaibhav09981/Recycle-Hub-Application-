@@ -102,7 +102,7 @@ export default function HomeScreen() {
 
         {/* Location */}
         <View className="flex-row items-center mb-6">
-          <TouchableOpacity className="w-12 h-12 rounded-full bg-white items-center justify-center border border-black" onPress={handleGetLocation} activeOpacity={0.7}>
+          <TouchableOpacity className="w-12 h-12 rounded-full bg-white items-center justify-center border border-black/25" onPress={handleGetLocation} activeOpacity={0.7}>
             {isLoadingLocation ? <ActivityIndicator size="small" color="#10B981" /> : <Text className="text-xl">📍</Text>}
           </TouchableOpacity>
         </View>
@@ -135,8 +135,7 @@ export default function HomeScreen() {
           <View className="bg-white rounded-2xl p-4 border border-black/25">
             <View className="flex-row items-center mb-4">
               <View>
-                <Text className="text-lg font-semibold text-textPrimary font-poppins">Scan & Get Started</Text>
-                <Text className="text-xs text-textSecondary font-poppins">Powered by Gemini Vision</Text>
+                <Text className="text-lg font-semibold text-black font-poppins">Scan & Get Started</Text>
               </View>
             </View>
 
