@@ -109,20 +109,20 @@ export default function HomeScreen() {
         </View>
 
         {/* Impact Stats */}
-        <View className="mb-6 border border-t p-4 rounded-2xl border-black/25">
+        <View className="mb-6 border border-t p-4 rounded-2xl bg-white border-black/25">
           <Text className="text-lg font-semibold text-textPrimary font-poppins mb-3">Your Impact</Text>
           <View className="flex-row gap-3">
-            <View className="flex-1 bg-card rounded-2xl p-3 items-center shadow-xl">
+            <View className="flex-1 bg-white border border-neutral-100 rounded-2xl p-3 items-center shadow-xl">
               <View className="w-12 h-12 rounded-xl bg-primaryLight items-center justify-center mb-2"><Text className="text-xl">🌍</Text></View>
               <Text className="text-lg font-bold text-center text-primary font-poppins">{totalSavings.toFixed(1)} kg</Text>
               <Text className="text-xs text-textSecondary font-poppins text-center">CO₂ Saved</Text>
             </View>
-            <View className="flex-1 bg-card rounded-2xl p-3 items-center shadow-sm">
+            <View className="flex-1 bg-white border border-neutral-100 rounded-2xl p-3 items-center shadow-sm">
               <View className="w-12 h-12 rounded-xl bg-amber-100 items-center justify-center mb-2"><Text className="text-xl">🏭</Text></View>
               <Text className="text-lg font-bold text-center text-warning font-poppins">{totalFootprint.toFixed(1)} kg</Text>
               <Text className="text-xs text-textSecondary text-center font-poppins">Carbon Footprint</Text>
             </View>
-            <View className="flex-1 bg-card rounded-2xl p-3 items-center shadow-sm">
+            <View className="flex-1 bg-white border border-neutral-100 rounded-2xl p-3 items-center shadow-sm">
               <View className="w-12 h-12 rounded-xl bg-primaryLight items-center justify-center mb-2"><Text className="text-xl">♻️</Text></View>
               <Text className="text-lg font-bold text-primary font-poppins">{itemsRecycled}</Text>
               <Text className="text-xs text-center text-textSecondary font-poppins">Items Recycled</Text>
@@ -130,15 +130,12 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* AI Scanner Card */}
+        {/* Scanner Card */}
         <View className="mb-6">
-          <View className="bg-white rounded-2xl p-4 border border-primary">
+          <View className="bg-white rounded-2xl p-4 border border-black/25">
             <View className="flex-row items-center mb-4">
-              <View className="w-10 h-10 rounded-lg bg-primaryLight items-center justify-center mr-3">
-                <Text className="text-xl">🤖</Text>
-              </View>
               <View>
-                <Text className="text-lg font-semibold text-textPrimary font-poppins">AI Scanner</Text>
+                <Text className="text-lg font-semibold text-textPrimary font-poppins">Scan & Get Started</Text>
                 <Text className="text-xs text-textSecondary font-poppins">Powered by Gemini Vision</Text>
               </View>
             </View>
