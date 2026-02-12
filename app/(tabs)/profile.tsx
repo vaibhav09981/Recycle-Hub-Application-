@@ -358,11 +358,11 @@ export default function ProfileScreen() {
         <View className="px-4 pt-6 pb-8">
   {user || session ? (
     <TouchableOpacity
-      className="bg-red-100 py-3.5 rounded-xl items-center border border-red-500"
+      className="bg-red-500 py-3.5 rounded-xl items-center border-2 border-black"
       onPress={handleLogout}
       activeOpacity={0.8}
     >
-      <Text className="text-base font-semibold text-red-600">Logout</Text>
+      <Text className="text-base font-semibold text-white">Logout</Text>
     </TouchableOpacity>
   ) : (
     <View className="flex-row justify-between gap-3">
