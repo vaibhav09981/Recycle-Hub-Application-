@@ -92,32 +92,24 @@ export default function HomeScreen() {
     <SafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
       <StatusBar barStyle="dark-content" />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16 }}>
-        {/* Header */}
+        <View className='flex flex-row justify-between py-4'>
+          {/* Header */}
         <View className="mb-4">
-          <Text className="text-sm text-textSecondary font-poppins mb-1">Good Morning</Text>
-          <Text className="text-3xl font-bold text-textPrimary font-poppins">{userName}</Text>
-          <Text className="text-sm text-textSecondary font-poppins mt-1">{currentDate}</Text>
+          <Text className="text-black font-poppins mb-1">Good Morning</Text>
+          <Text className="text-3xl font-bold text-black font-poppins">{userName}</Text>
+          <Text className="text-sm text-black font-poppins mt-1">{currentDate}</Text>
         </View>
 
-        {/* Search & Location */}
+        {/* Location */}
         <View className="flex-row items-center mb-6">
-          <View className="flex-1 flex-row items-center bg-card rounded-xl px-4 py-3 border border-border">
-            <Text className="text-lg mr-3">🔍</Text>
-            <TextInput
-              className="flex-1 text-base text-textPrimary font-poppins"
-              placeholder="Search items..."
-              placeholderTextColor="#9CA3AF"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-          </View>
-          <TouchableOpacity className="w-12 h-12 rounded-xl bg-card items-center justify-content-center ml-3 border border-border" onPress={handleGetLocation} activeOpacity={0.7}>
+          <TouchableOpacity className="w-12 h-12 rounded-full bg-white items-center justify-center border border-black" onPress={handleGetLocation} activeOpacity={0.7}>
             {isLoadingLocation ? <ActivityIndicator size="small" color="#10B981" /> : <Text className="text-xl">📍</Text>}
           </TouchableOpacity>
         </View>
+        </View>
 
         {/* Impact Stats */}
-        <View className="mb-6">
+        <View className="mb-6 border border-t p-4 rounded-2xl border-black/25">
           <Text className="text-lg font-semibold text-textPrimary font-poppins mb-3">Your Impact</Text>
           <View className="flex-row gap-3">
             <View className="flex-1 bg-card rounded-2xl p-3 items-center shadow-sm">
