@@ -112,25 +112,20 @@ export default function HomeScreen() {
         <View className="mb-6 border border-t p-4 rounded-2xl border-black/25">
           <Text className="text-lg font-semibold text-textPrimary font-poppins mb-3">Your Impact</Text>
           <View className="flex-row gap-3">
-            <View className="flex-1 bg-card rounded-2xl p-3 items-center shadow-sm">
+            <View className="flex-1 bg-card rounded-2xl p-3 items-center shadow-xl">
               <View className="w-12 h-12 rounded-xl bg-primaryLight items-center justify-center mb-2"><Text className="text-xl">🌍</Text></View>
-              <Text className="text-xl font-bold text-primary font-poppins">{totalSavings.toFixed(1)} kg</Text>
-              <Text className="text-xs text-textSecondary font-poppins">CO₂ Saved</Text>
+              <Text className="text-lg font-bold text-center text-primary font-poppins">{totalSavings.toFixed(1)} kg</Text>
+              <Text className="text-xs text-textSecondary font-poppins text-center">CO₂ Saved</Text>
             </View>
             <View className="flex-1 bg-card rounded-2xl p-3 items-center shadow-sm">
               <View className="w-12 h-12 rounded-xl bg-amber-100 items-center justify-center mb-2"><Text className="text-xl">🏭</Text></View>
-              <Text className="text-xl font-bold text-warning font-poppins">{totalFootprint.toFixed(1)} kg</Text>
-              <Text className="text-xs text-textSecondary font-poppins">Carbon Footprint</Text>
+              <Text className="text-lg font-bold text-center text-warning font-poppins">{totalFootprint.toFixed(1)} kg</Text>
+              <Text className="text-xs text-textSecondary text-center font-poppins">Carbon Footprint</Text>
             </View>
             <View className="flex-1 bg-card rounded-2xl p-3 items-center shadow-sm">
               <View className="w-12 h-12 rounded-xl bg-primaryLight items-center justify-center mb-2"><Text className="text-xl">♻️</Text></View>
-              <Text className="text-xl font-bold text-primary font-poppins">{itemsRecycled}</Text>
-              <Text className="text-xs text-textSecondary font-poppins">Items Recycled</Text>
-            </View>
-            <View className="flex-1 bg-card rounded-2xl p-3 items-center shadow-sm">
-              <View className="w-12 h-12 rounded-xl bg-amber-100 items-center justify-center mb-2"><Text className="text-xl">⭐</Text></View>
-              <Text className="text-xl font-bold text-warning font-poppins">{Math.round(totalSavings * 10)}</Text>
-              <Text className="text-xs text-textSecondary font-poppins">Green Points</Text>
+              <Text className="text-lg font-bold text-primary font-poppins">{itemsRecycled}</Text>
+              <Text className="text-xs text-center text-textSecondary font-poppins">Items Recycled</Text>
             </View>
           </View>
         </View>
