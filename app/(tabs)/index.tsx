@@ -163,7 +163,7 @@ export default function HomeScreen() {
       >
         {/* Header Section */}
         <View style={styles.headerSection}>
-          <Text style={styles.greeting}>Good Morning</Text>
+          <Text style={styles.header}>Good Morning</Text>
           <Text style={styles.userName}>{userName}</Text>
           <Text style={styles.date}>{currentDate}</Text>
         </View>
