@@ -18,6 +18,7 @@ export interface ScannedItem {
   imageUrl: string;
   scannedAt: string; // Store as string for AsyncStorage
   inScannedCart: boolean;
+  isRecycled: boolean;
 }
 
 interface JournalContextType {
@@ -29,6 +30,7 @@ interface JournalContextType {
   getScannedCartItems: () => ScannedItem[];
   journalCount: number;
   scannedCartCount: number;
+  markAsRecycled: (ids: string[]) => void;
   getTotalCarbonSaved: () => number;
 }
 
@@ -71,6 +73,7 @@ export function JournalProvider({ children }: { children: ReactNode }) {
       id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
       scannedAt: new Date().toISOString(),
       inScannedCart: false,
+      isRecycled: false,
     };
     setScannedItems((prev) => [newItem, ...prev]);
   };
@@ -83,6 +86,14 @@ export function JournalProvider({ children }: { children: ReactNode }) {
     setScannedItems((prev) =>
       prev.map((item) =>
         item.id === id ? { ...item, inScannedCart: !item.inScannedCart } : item
+      )
+    );
+  };
+  
+  const markAsRecycled = (ids: string[]) => {
+    setScannedItems((prev) =>
+      prev.map((item) =>
+        ids.includes(item.id) ? { ...item, isRecycled: true, inScannedCart: false } : item
       )
     );
   };
@@ -116,6 +127,7 @@ export function JournalProvider({ children }: { children: ReactNode }) {
         getScannedCartItems,
         journalCount,
         scannedCartCount,
+        markAsRecycled,
         getTotalCarbonSaved,
       }}
     >

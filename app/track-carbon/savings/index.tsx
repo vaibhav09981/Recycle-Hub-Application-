@@ -3,18 +3,19 @@ import { ScrollView, Text, TouchableOpacity, View, TextInput, Alert, StatusBar }
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useCarbon } from '@/context/CarbonContext';
+import { Ionicons } from '@expo/vector-icons';
 
 // Recycling savings factors (kg CO2 saved per kg recycled)
-const SAVINGS_FACTORS: Record<string, { savings: number; percent: number; category: string }> = {
-  'PET (Plastic bottles)': { savings: 2.3, percent: 67, category: 'plastic' },
-  'HDPE (Milk jugs)': { savings: 1.3, percent: 68, category: 'plastic' },
-  'Plastic bags': { savings: 1.4, percent: 70, category: 'plastic' },
-  'Aluminum (cans)': { savings: 8.1, percent: 90, category: 'metal' },
-  'Steel (tin cans)': { savings: 1.7, percent: 74, category: 'metal' },
-  'Cardboard': { savings: 0.7, percent: 77, category: 'paper' },
-  'Mixed paper': { savings: 0.9, percent: 82, category: 'paper' },
-  'Glass bottles': { savings: 0.3, percent: 37, category: 'glass' },
-  'Electronics': { savings: 150, percent: 75, category: 'ewaste' },
+const SAVINGS_FACTORS: Record<string, { savings: number; percent: number; category: string; stdWeight: number }> = {
+  'PET (Plastic bottles)': { savings: 2.3, percent: 67, category: 'plastic', stdWeight: 0.025 },
+  'HDPE (Milk jugs)': { savings: 1.3, percent: 68, category: 'plastic', stdWeight: 0.06 },
+  'Plastic bags': { savings: 1.4, percent: 70, category: 'plastic', stdWeight: 0.005 },
+  'Aluminum (cans)': { savings: 8.1, percent: 90, category: 'metal', stdWeight: 0.015 },
+  'Steel (tin cans)': { savings: 1.7, percent: 74, category: 'metal', stdWeight: 0.05 },
+  'Cardboard': { savings: 0.7, percent: 77, category: 'paper', stdWeight: 0.2 },
+  'Mixed paper': { savings: 0.9, percent: 82, category: 'paper', stdWeight: 0.005 },
+  'Glass bottles': { savings: 0.3, percent: 37, category: 'glass', stdWeight: 0.2 },
+  'Electronics': { savings: 150, percent: 75, category: 'ewaste', stdWeight: 2.0 },
 };
 
 const MATERIALS = Object.keys(SAVINGS_FACTORS);
@@ -25,7 +26,8 @@ export default function SavingsScreen() {
   const [selectedMaterial, setSelectedMaterial] = useState<string>(MATERIALS[0]);
   const [weight, setWeight] = useState('');
   const [quantity, setQuantity] = useState('1');
-  const [result, setResult] = useState<{ savings: number; percent: number; equivalent: string } | null>(null);
+  const [inputMode, setInputMode] = useState<'weight' | 'count'>('weight');
+  const [result, setResult] = useState<{ savings: number; weightUsed: number; percent: number; equivalent: string } | null>(null);
   const [isSaved, setIsSaved] = useState(false);
 
   // Calculate equivalents based on real total
@@ -36,11 +38,17 @@ export default function SavingsScreen() {
   };
 
   const calculateSavings = () => {
-    const weightNum = parseFloat(weight) || 0;
-    const quantityNum = parseInt(quantity) || 1;
-    const data = SAVINGS_FACTORS[selectedMaterial];
+    const materialData = SAVINGS_FACTORS[selectedMaterial];
     
-    const totalSavings = weightNum * data.savings * quantityNum;
+    let weightToUse = 0;
+    if (inputMode === 'weight') {
+      weightToUse = parseFloat(weight) || 0;
+    } else {
+      const quantityNum = parseInt(quantity) || 1;
+      weightToUse = quantityNum * materialData.stdWeight;
+    }
+    
+    const totalSavings = weightToUse * materialData.savings;
     
     // Calculate equivalent
     let equivalent = '';
@@ -54,15 +62,13 @@ export default function SavingsScreen() {
       equivalent = `${(totalSavings / 10).toFixed(1)} kg = ${(totalSavings / 50).toFixed(1)} trees planted`;
     }
 
-    setResult({ savings: totalSavings, percent: data.percent, equivalent });
+    setResult({ savings: totalSavings, weightUsed: weightToUse, percent: materialData.percent, equivalent });
     setIsSaved(false);
   };
 
   const saveSavings = () => {
     if (result && result.savings > 0) {
-      const weightNum = parseFloat(weight) || 0;
-      const quantityNum = parseInt(quantity) || 1;
-      addSavings(selectedMaterial, weightNum, quantityNum, result.savings);
+      addSavings(selectedMaterial, result.weightUsed, 1, result.savings);
       setIsSaved(true);
       Alert.alert('Saved!', 'Your carbon savings have been added to your dashboard.');
     }
@@ -95,135 +101,166 @@ export default function SavingsScreen() {
           <Text className="text-xl text-primary font-semibold mr-1">←</Text>
           <Text className="text-base font-semibold text-primary">BACK</Text>
         </TouchableOpacity>
+        <Text className="flex-1 text-center font-bold text-slate-900 mr-10 font-poppins">Carbon Savings</Text>
       </View>
       <ScrollView 
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ padding: 16 }}
       >
-        {/* Hero Card - Total Savings */}
-        <View className="bg-primary rounded-2xl p-6 items-center mb-5 shadow-lg shadow-primary/20 elevation-4">
-          <Text className="text-4xl mb-2">🌱</Text>
-          <Text className="text-sm text-white/80 mb-1">Total CO2 Saved</Text>
-          <Text className="text-[42px] font-bold text-white mb-4">{contextTotalSavings.toFixed(1)} kg</Text>
-          <View className="flex-row gap-6">
-            <View className="flex-row items-center">
-              <Text className="text-lg mr-1.5">🚗</Text>
-              <Text className="text-sm text-white/90">{calculateEquivalents(contextTotalSavings).km} km</Text>
-            </View>
-            <View className="flex-row items-center">
-              <Text className="text-lg mr-1.5">🌳</Text>
-              <Text className="text-sm text-white/90">{calculateEquivalents(contextTotalSavings).trees} trees</Text>
-            </View>
-          </View>
+        {/* Total Impact Card */}
+        <View className="bg-emerald-600 rounded-[32px] p-8 items-center mb-6 shadow-xl shadow-emerald-200">
+           <View className="bg-white/20 px-4 py-1.5 rounded-full mb-4">
+              <Text className="text-[10px] font-extrabold text-white uppercase tracking-widest">Global Impact Score</Text>
+           </View>
+           <Text className="text-sm text-emerald-50 mb-1 font-poppins">Total CO₂ Offset</Text>
+           <View className="flex-row items-baseline mb-4">
+              <Text className="text-5xl font-black text-white font-poppins">{contextTotalSavings.toFixed(1)}</Text>
+              <Text className="text-xl font-bold text-emerald-100 ml-2 font-poppins">KG</Text>
+           </View>
+           
+           <View className="flex-row w-full justify-around mt-2 pt-6 border-t border-white/10">
+              <View className="items-center">
+                 <View className="w-10 h-10 rounded-2xl bg-white/10 items-center justify-center mb-2">
+                    <Ionicons name="car-outline" size={22} color="white" />
+                 </View>
+                 <Text className="text-sm font-bold text-white">{calculateEquivalents(contextTotalSavings).km} km</Text>
+                 <Text className="text-[10px] text-emerald-100 font-medium font-poppins">Emissions Avoided</Text>
+              </View>
+              <View className="items-center">
+                 <View className="w-10 h-10 rounded-2xl bg-white/10 items-center justify-center mb-2">
+                    <Ionicons name="leaf-outline" size={22} color="white" />
+                 </View>
+                 <Text className="text-sm font-bold text-white">{calculateEquivalents(contextTotalSavings).trees}</Text>
+                 <Text className="text-[10px] text-emerald-100 font-medium font-poppins">Trees Equivalent</Text>
+              </View>
+           </View>
         </View>
 
         {/* Calculator Section */}
-        <View className="bg-card rounded-2xl p-5 mb-5 shadow-sm shadow-black/5 elevation-2">
-          <Text className="text-lg font-semibold text-textPrimary mb-1.5">Calculate Your Savings</Text>
-          <Text className="text-xs text-textSecondary mb-4 leading-[18px]">
-            Enter material and weight to see how much CO2 you save by recycling
+        <View className="bg-white rounded-[28px] p-6 mb-6 border border-slate-100 shadow-sm">
+          <Text className="text-lg font-bold text-slate-900 font-poppins mb-1">Savings Calculator</Text>
+          <Text className="text-xs text-slate-400 mb-6 leading-5 font-poppins">
+            Estimate your impact by entering the weight of materials you've diverted from landfills.
           </Text>
 
           {/* Material Selector */}
-          <Text className="text-xs font-medium text-textSecondary mb-2">Select Material</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <View className="flex-row flex-wrap gap-2 mb-3">
+          <Text className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 font-poppins">Material Type</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-6">
+            <View className="flex-row gap-2">
               {MATERIALS.map((material) => (
                 <TouchableOpacity
                   key={material}
-                  className={`px-3 py-2 rounded-full ${selectedMaterial === material ? '' : 'bg-background border border-border'}`}
+                  className={`px-4 py-2.5 rounded-2xl ${selectedMaterial === material ? '' : 'bg-slate-50 border border-slate-100'}`}
                   style={selectedMaterial === material ? { backgroundColor: getCategoryColor(SAVINGS_FACTORS[material].category) } : {}}
                   onPress={() => setSelectedMaterial(material)}
                 >
-                  <Text className={`text-xs ${selectedMaterial === material ? 'text-white font-semibold' : 'text-textSecondary'}`}>
+                  <Text className={`text-[11px] font-bold ${selectedMaterial === material ? 'text-white' : 'text-slate-500'} font-poppins`}>
                     {material}
                   </Text>
                 </TouchableOpacity>
               ))}
             </View>
           </ScrollView>
-          <Text className="text-xs text-primary font-medium mb-4">
-            Savings: {selectedData.savings} kg CO2/kg ({selectedData.percent}% savings)
-          </Text>
+
+          {/* Input Mode Toggle */}
+          <View className="flex-row bg-slate-50 rounded-2xl p-1.5 mb-6 border border-slate-100">
+            <TouchableOpacity 
+              className={`flex-1 py-3 rounded-xl items-center ${inputMode === 'weight' ? 'bg-white shadow-sm' : ''}`}
+              onPress={() => setInputMode('weight')}
+            >
+              <Text className={`text-[11px] font-bold ${inputMode === 'weight' ? 'text-emerald-700' : 'text-slate-400'} font-poppins`}>By Weight (KG)</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              className={`flex-1 py-3 rounded-xl items-center ${inputMode === 'count' ? 'bg-white shadow-sm' : ''}`}
+              onPress={() => setInputMode('count')}
+            >
+              <Text className={`text-[11px] font-bold ${inputMode === 'count' ? 'text-emerald-700' : 'text-slate-400'} font-poppins`}>By Item Count</Text>
+            </TouchableOpacity>
+          </View>
 
           {/* Input Section */}
-          <View className="flex-row gap-3 mb-4">
-            <View className="flex-1">
-              <Text className="text-xs font-medium text-textSecondary mb-1.5">Weight (kg)</Text>
-              <TextInput
-                className="bg-background rounded-xl px-4 py-3.5 text-sm border border-border"
-                placeholder="0.0"
-                placeholderTextColor="#6B7280"
-                keyboardType="decimal-pad"
-                value={weight}
-                onChangeText={setWeight}
-              />
-            </View>
-            <View className="flex-1">
-              <Text className="text-xs font-medium text-textSecondary mb-1.5">Quantity</Text>
-              <TextInput
-                className="bg-background rounded-xl px-4 py-3.5 text-sm border border-border"
-                placeholder="1"
-                placeholderTextColor="#6B7280"
-                keyboardType="number-pad"
-                value={quantity}
-                onChangeText={setQuantity}
-              />
-            </View>
+          <View className="mb-6">
+            {inputMode === 'weight' ? (
+              <View>
+                <Text className="text-xs font-bold text-slate-500 uppercase mb-2 font-poppins">Total Weight Diverted</Text>
+                <TextInput
+                  className="bg-slate-50 rounded-2xl px-5 py-4 text-base font-bold text-slate-900 border border-slate-100"
+                  placeholder="0.00 kg"
+                  placeholderTextColor="#94A3B8"
+                  keyboardType="decimal-pad"
+                  value={weight}
+                  onChangeText={setWeight}
+                />
+              </View>
+            ) : (
+              <View>
+                <Text className="text-xs font-bold text-slate-500 uppercase mb-2 font-poppins">Number of Items</Text>
+                <TextInput
+                  className="bg-slate-50 rounded-2xl px-5 py-4 text-base font-bold text-slate-900 border border-slate-100"
+                  placeholder="1"
+                  placeholderTextColor="#94A3B8"
+                  keyboardType="number-pad"
+                  value={quantity}
+                  onChangeText={setQuantity}
+                />
+                <Text className="text-[10px] text-slate-400 mt-2 italic font-poppins">
+                  Est. Weight: ~{Math.round(selectedData.stdWeight * 1000)}g per item
+                </Text>
+              </View>
+            )}
           </View>
 
           {/* Calculate Button */}
-          <TouchableOpacity className="bg-primary rounded-xl py-4 items-center" onPress={calculateSavings} activeOpacity={0.9}>
-            <Text className="text-base font-semibold text-white">Calculate Savings</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Save Button */}
-        {result && result.savings > 0 && (
           <TouchableOpacity 
-            className={`rounded-xl py-4 items-center mb-5 ${isSaved ? 'bg-primaryLight border border-primary' : 'bg-primary'}`}
-            onPress={saveSavings}
-            disabled={isSaved}
+            className="bg-emerald-600 h-14 rounded-2xl items-center justify-center shadow-lg shadow-emerald-200" 
+            onPress={calculateSavings} 
             activeOpacity={0.9}
           >
-            <Text className={`text-base font-semibold ${isSaved ? 'text-primaryDark' : 'text-white'}`}>
-              {isSaved ? '✓ Saved to Dashboard' : 'Save to Dashboard'}
-            </Text>
+            <Text className="text-white font-bold text-base font-poppins">Calculate Impact</Text>
           </TouchableOpacity>
-        )}
+        </View>
 
         {/* Result Card */}
         {result && result.savings > 0 && (
-          <View className="bg-primaryLight rounded-2xl p-5 items-center mb-5 border-2 border-primary">
-            <View className="flex-row items-center mb-2">
-              <Text className="text-2xl mr-2">🎉</Text>
-              <Text className="text-base font-semibold text-primaryDark">Great Job!</Text>
+          <View className="bg-emerald-50 rounded-[32px] p-6 mb-8 border-2 border-emerald-100 items-center">
+            <View className="w-12 h-12 rounded-full bg-white items-center justify-center mb-4 shadow-sm">
+                <Ionicons name="checkmark-circle" size={28} color="#10B981" />
             </View>
-            <Text className="text-[36px] font-bold text-primary mb-1">+{result.savings.toFixed(3)} kg CO2</Text>
-            <Text className="text-sm text-primaryDark mb-3">That is {result.percent}% savings!</Text>
-            <View className="bg-card rounded-xl p-3 w-full mb-3">
-              <Text className="text-xs text-textSecondary text-center">
-                Equivalent to: {result.equivalent}
+            
+            <Text className="text-sm font-bold text-emerald-800 font-poppins mb-1">You Saved</Text>
+            <View className="flex-row items-baseline mb-4">
+                <Text className="text-4xl font-black text-emerald-600 font-poppins">+{result.savings.toFixed(3)}</Text>
+                <Text className="text-lg font-bold text-emerald-400 ml-1.5 font-poppins">kg CO₂</Text>
+            </View>
+
+            <View className="w-full bg-white rounded-2xl p-4 mb-4 shadow-sm border border-emerald-100">
+               <View className="flex-row justify-between mb-2 items-center">
+                  <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-poppins">Savings Efficiency</Text>
+                  <Text className="text-xs font-black text-emerald-600">{result.percent}%</Text>
+               </View>
+               <View className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                  <View className="h-full bg-emerald-500 rounded-full" style={{ width: `${result.percent}%` }} />
+               </View>
+            </View>
+
+            <View className="bg-emerald-600 rounded-xl p-4 w-full mb-6">
+                <Text className="text-xs text-white text-center font-bold font-poppins">
+                    Equivalent to: {result.equivalent}
+                </Text>
+            </View>
+
+            <TouchableOpacity 
+              className={`w-full py-4 rounded-xl items-center ${isSaved ? 'bg-white border border-emerald-100' : 'bg-emerald-100 border border-emerald-200'}`}
+              onPress={saveSavings}
+              disabled={isSaved}
+            >
+              <Text className={`text-sm font-bold ${isSaved ? 'text-emerald-400' : 'text-emerald-700'} font-poppins`}>
+                {isSaved ? '✓ Recorded in Impact Dashboard' : 'Record Result'}
               </Text>
-            </View>
-            <View className="bg-primary rounded-xl p-3 w-full">
-              <Text className="text-xs text-white text-center">
-                Keep recycling! Every item makes a difference for our planet. 🌍
-              </Text>
-            </View>
+            </TouchableOpacity>
           </View>
         )}
 
-        {/* Monthly Progress */}
-        <View className="bg-card rounded-xl p-4 shadow-sm shadow-black/5 elevation-2">
-          <Text className="text-base font-semibold text-textPrimary mb-3">Monthly Progress</Text>
-          <View className="h-3 bg-background rounded-full overflow-hidden mb-2">
-            <View className="h-full bg-primary rounded-full" style={{ width: '65%' }} />
-          </View>
-          <Text className="text-xs text-textSecondary">65% toward this month goal</Text>
-        </View>
-
-        {/* Bottom Spacer */}
         <View className="h-10" />
       </ScrollView>
     </SafeAreaView>

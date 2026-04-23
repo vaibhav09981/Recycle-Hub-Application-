@@ -35,10 +35,10 @@ export default function Loading({ onLoadingComplete }: LoadingProps) {
       
       {/* Loading Animation */}
       <View className="items-center w-[80%]">
-        <View className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden mb-4">
+        <View className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden mb-4">
           <View className="h-full bg-primary rounded-full" style={{ width: `${percentage}%` }} />
         </View>
-        <Text className="text-sm text-gray-500">Loading... {percentage}%</Text>
+        <Text className="text-sm text-slate-400 font-poppins">Loading... {percentage}%</Text>
       </View>
     </View>
   );

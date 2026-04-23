@@ -6,6 +6,7 @@ import { HapticTab } from '@/components/haptic-tab';
 import { useCart } from '@/context/CartContext';
 import { useJournal } from '@/context/JournalContext';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { Ionicons } from '@expo/vector-icons';
 
 const ScrollContext = createContext<Animated.Value | null>(null);
 
@@ -37,17 +38,17 @@ export default function TabLayout() {
           tabBarButton: (props) => <HapticTab {...props} />,
           tabBarStyle: {
             position: 'absolute',
-            bottom: insets.bottom,
-            left: 8,
-            right: 8,
-            height: 60,
-            paddingBottom: 0,
-            paddingTop: 8,
-            borderColor: '#E5E7EB',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: 65 + insets.bottom,
+            paddingBottom: insets.bottom,
+            paddingTop: 10,
             backgroundColor: '#FFFFFF',
-            elevation: 8,
-            shadowRadius: 4,
-            transform: [{ translateY }],
+            borderTopWidth: 1,
+            borderTopColor: '#F3F4F6',
+            elevation: 0,
+            shadowOpacity: 0,
           },
           tabBarLabelStyle: {
             fontFamily: 'Poppins',
@@ -59,10 +60,8 @@ export default function TabLayout() {
           name="index"
           options={{
             title: 'Home',
-            tabBarIcon: ({ color }) => (
-              <View style={{ alignItems: 'center' }}>
-                <Text style={{ fontSize: 24 }}>🏠</Text>
-              </View>
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="home-outline" size={24} color={color} />
             ),
           }}
         />
@@ -70,10 +69,8 @@ export default function TabLayout() {
           name="shop"
           options={{
             title: 'Shop',
-            tabBarIcon: ({ color }) => (
-              <View style={{ alignItems: 'center' }}>
-                <Text style={{ fontSize: 24 }}>🛍️</Text>
-              </View>
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="cart-outline" size={24} color={color} />
             ),
           }}
         />
@@ -81,9 +78,9 @@ export default function TabLayout() {
           name="cart"
           options={{
             title: 'Cart',
-            tabBarIcon: ({ color }) => (
-              <View style={{ alignItems: 'center' }}>
-                <Text style={{ fontSize: 24 }}>🛒</Text>
+            tabBarIcon: ({ color, size }) => (
+              <View>
+                <Ionicons name="bag-handle-outline" size={24} color={color} />
                 {cartCount > 0 && (
                   <View
                     style={{
@@ -92,23 +89,13 @@ export default function TabLayout() {
                       right: -8,
                       backgroundColor: '#EF4444',
                       borderRadius: 10,
-                      minWidth: 20,
-                      height: 20,
+                      minWidth: 16,
+                      height: 16,
                       alignItems: 'center',
                       justifyContent: 'center',
-                      paddingHorizontal: 6,
                     }}
                   >
-                    <Text
-                      style={{
-                        color: '#FFFFFF',
-                        fontSize: 12,
-                        fontWeight: 'bold',
-                        fontFamily: 'Poppins',
-                      }}
-                    >
-                      {cartCount > 99 ? '99+' : cartCount}
-                    </Text>
+                    <Text style={{ color: 'white', fontSize: 10, fontWeight: 'bold' }}>{cartCount}</Text>
                   </View>
                 )}
               </View>
@@ -119,9 +106,9 @@ export default function TabLayout() {
           name="journal"
           options={{
             title: 'Journal',
-            tabBarIcon: ({ color }) => (
-              <View style={{ alignItems: 'center' }}>
-                <Text style={{ fontSize: 24 }}>📋</Text>
+            tabBarIcon: ({ color, size }) => (
+              <View>
+                <Ionicons name="book-outline" size={24} color={color} />
                 {journalCount > 0 && (
                   <View
                     style={{
@@ -130,23 +117,13 @@ export default function TabLayout() {
                       right: -8,
                       backgroundColor: '#10B981',
                       borderRadius: 10,
-                      minWidth: 20,
-                      height: 20,
+                      minWidth: 16,
+                      height: 16,
                       alignItems: 'center',
                       justifyContent: 'center',
-                      paddingHorizontal: 6,
                     }}
                   >
-                    <Text
-                      style={{
-                        color: '#FFFFFF',
-                        fontSize: 12,
-                        fontWeight: 'bold',
-                        fontFamily: 'Poppins',
-                      }}
-                    >
-                      {journalCount > 99 ? '99+' : journalCount}
-                    </Text>
+                    <Text style={{ color: 'white', fontSize: 10, fontWeight: 'bold' }}>{journalCount}</Text>
                   </View>
                 )}
               </View>
@@ -157,10 +134,8 @@ export default function TabLayout() {
           name="profile"
           options={{
             title: 'Profile',
-            tabBarIcon: ({ color }) => (
-              <View style={{ alignItems: 'center' }}>
-                <Text style={{ fontSize: 24 }}>👤</Text>
-              </View>
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="person-outline" size={24} color={color} />
             ),
           }}
         />

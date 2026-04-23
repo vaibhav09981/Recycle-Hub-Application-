@@ -1,195 +1,271 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StatusBar, Image, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StatusBar, Image, Alert, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useJournal, ScannedItem } from '@/context/JournalContext';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+
+const { width } = Dimensions.get('window');
 
 export default function JournalScreen() {
   const router = useRouter();
-  const { scannedItems, removeScannedItem, toggleScannedCart, getScannedCartItems, getTotalCarbonSaved, journalCount } = useJournal();
+  const { scannedItems, removeScannedItem, toggleScannedCart, getTotalCarbonSaved, journalCount, scannedCartCount } = useJournal();
   const [selectedItem, setSelectedItem] = useState<ScannedItem | null>(null);
 
   const handleRemoveItem = (id: string, productName: string) => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
     Alert.alert('Remove Item', `Remove "${productName}" from your journal?`, [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Remove', style: 'destructive', onPress: () => { removeScannedItem(id); if (selectedItem?.id === id) setSelectedItem(null); } },
+      { 
+        text: 'Remove', 
+        style: 'destructive', 
+        onPress: () => { 
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          removeScannedItem(id); 
+          if (selectedItem?.id === id) setSelectedItem(null); 
+        } 
+      },
     ]);
   };
 
-  const handleToggleCart = (id: string) => { toggleScannedCart(id); };
+  const handleToggleCart = (id: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    toggleScannedCart(id);
+  };
 
   const getRecyclableColor = (status: string) => {
     switch (status) {
-      case 'fully': return '#22C55E';
-      case 'partially': return '#F59E0B';
-      case 'non': return '#EF4444';
-      default: return '#9CA3AF';
+      case 'fully': return '#059669';
+      case 'partially': return '#D97706';
+      case 'non': return '#DC2626';
+      default: return '#64748B';
     }
   };
 
   const getRecyclableText = (status: string) => {
     switch (status) {
-      case 'fully': return 'Fully Recyclable';
-      case 'partially': return 'Partially Recyclable';
-      case 'non': return 'Non-Recyclable';
+      case 'fully': return 'Sustainable';
+      case 'partially': return 'Mixed Waste';
+      case 'non': return 'Landfill';
       default: return 'Unknown';
     }
   };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
+    <SafeAreaView className="flex-1 bg-[#FDFCFB]" edges={['top']}>
       <StatusBar barStyle="dark-content" />
-      <View className="flex-row items-center px-4 py-4 bg-card border-b border-border">
-        <TouchableOpacity className="flex-row items-center py-2" onPress={() => router.back()}>
-          <Text className="text-xl text-primary font-semibold mr-1">←</Text>
-          <Text className="text-base font-semibold text-primary">BACK</Text>
+      
+      {/* Header */}
+      <View className="flex-row items-center justify-between px-6 py-4">
+        <TouchableOpacity
+          onPress={() => router.back()}
+          className="w-12 h-12 rounded-full bg-white shadow-sm items-center justify-center border border-slate-100"
+        >
+          <Ionicons name="chevron-back" size={24} color="#0F172A" />
         </TouchableOpacity>
-        <Text className="flex-1 text-xl font-bold text-textPrimary text-center">My Journal</Text>
-        <View className="w-10" />
+        <Text className="text-xl font-poppins-bold text-slate-900">Eco Journal</Text>
+        <View className="w-12 h-12 rounded-full bg-emerald-50 items-center justify-center">
+          <Ionicons name="journal" size={20} color="#059669" />
+        </View>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16 }}>
-        <View className="flex-row gap-3 mb-6">
-          <View className="flex-1 bg-card rounded-2xl p-4 items-center">
-            <Text className="text-xs text-textSecondary mb-2">Total Scanned</Text>
-            <Text className="text-2xl font-bold text-primary">{journalCount}</Text>
-            <Text className="text-xs text-textTertiary">items</Text>
-          </View>
-          <View className="flex-1 bg-card rounded-2xl p-4 items-center">
-            <Text className="text-xs text-textSecondary mb-2">CO₂ Saved</Text>
-            <Text className="text-2xl font-bold text-emerald-600">{getTotalCarbonSaved().toFixed(2)} kg</Text>
-            <Text className="text-xs text-textTertiary">by recycling</Text>
+      <ScrollView 
+        showsVerticalScrollIndicator={false} 
+        contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 10, paddingBottom: 40 }}
+      >
+        {/* Impact Overview Section */}
+        <View className="mb-10">
+          <Text className="text-3xl font-poppins-black text-slate-900 mb-6">
+            Your <Text className="text-emerald-600">Impact</Text>
+          </Text>
+          
+          <View className="flex-row gap-4">
+            <View className="flex-1 bg-white p-6 rounded-[32px] shadow-sm border border-slate-50 relative overflow-hidden">
+               <View className="absolute -right-2 -bottom-2 opacity-10">
+                <Ionicons name="cube" size={80} color="#10B981" />
+              </View>
+              <Text className="text-[10px] font-poppins-bold text-slate-400 uppercase tracking-widest mb-1">Items Scanned</Text>
+              <Text className="text-4xl font-poppins-black text-slate-900">{journalCount}</Text>
+              <View className="mt-2 flex-row items-center">
+                <View className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5" />
+                <Text className="text-[10px] font-poppins-semibold text-emerald-600 uppercase">Live Tracker</Text>
+              </View>
+            </View>
+
+            <View className="flex-1 bg-slate-900 p-6 rounded-[32px] shadow-sm relative overflow-hidden">
+              <View className="absolute -right-2 -bottom-2 opacity-20">
+                <Ionicons name="leaf" size={80} color="white" />
+              </View>
+              <Text className="text-[10px] font-poppins-bold text-slate-400 uppercase tracking-widest mb-1">CO₂ Saved</Text>
+              <View className="flex-row items-baseline">
+                <Text className="text-3xl font-poppins-black text-white">{getTotalCarbonSaved().toFixed(1)}</Text>
+                <Text className="text-sm font-poppins-bold text-emerald-400 ml-1">kg</Text>
+              </View>
+              <View className="mt-2 flex-row items-center">
+                <Ionicons name="trending-up" size={12} color="#10B981" />
+                <Text className="text-[10px] font-poppins-semibold text-emerald-400 uppercase ml-1">Increasing</Text>
+              </View>
+            </View>
           </View>
         </View>
 
-        <View className="mb-6">
-          <Text className="text-lg font-semibold text-textPrimary mb-3">Scanned Items</Text>
+        {/* Journal List Section */}
+        <View className="mb-8">
+          <View className="flex-row items-center justify-between mb-6">
+            <Text className="text-xl font-poppins-bold text-slate-900">History Log</Text>
+            <View className="px-4 py-1.5 bg-slate-100 rounded-full">
+              <Text className="text-[10px] font-poppins-bold text-slate-500 uppercase tracking-widest">Recent</Text>
+            </View>
+          </View>
+
           {scannedItems.length === 0 ? (
-            <View className="bg-card rounded-2xl p-10 items-center">
-              <Text className="text-5xl mb-4">📋</Text>
-              <Text className="text-lg font-semibold text-textPrimary mb-2">No items yet</Text>
-              <Text className="text-sm text-textSecondary mb-6">Scan items to add them to your journal</Text>
-              <TouchableOpacity className="bg-primary px-8 py-3 rounded-lg" onPress={() => router.push('/scan')}>
-                <Text className="text-base font-semibold text-white">Scan Now</Text>
+            <View className="bg-white rounded-[40px] p-12 items-center border border-dashed border-slate-200">
+              <View className="w-24 h-24 bg-emerald-50 rounded-full items-center justify-center mb-6">
+                <Ionicons name="camera-outline" size={40} color="#059669" />
+              </View>
+              <Text className="text-xl font-poppins-bold text-slate-900 mb-2">Start Your Journey</Text>
+              <Text className="text-sm font-poppins text-slate-500 text-center mb-8 px-4 leading-5">
+                Your eco-journal is empty. Scan an item to see its environmental impact!
+              </Text>
+              <TouchableOpacity 
+                className="bg-emerald-600 px-10 py-5 rounded-full shadow-lg shadow-emerald-200" 
+                onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); router.push('/scan'); }}
+              >
+                <Text className="text-white font-poppins-bold">Analyze Product</Text>
               </TouchableOpacity>
             </View>
           ) : (
-            <View className="gap-3">
+            <View className="gap-5">
               {scannedItems.map((item) => (
-                <TouchableOpacity key={item.id} className="flex-row items-center bg-card rounded-xl p-3" onPress={() => setSelectedItem(item)} activeOpacity={0.8}>
-                  <Image source={{ uri: item.imageUrl }} className="w-15 h-15 rounded-xl mr-3" />
-                  <View className="flex-1">
-                    <Text className="text-base font-semibold text-textPrimary mb-1">{item.productName}</Text>
-                    <View className="flex-row items-center gap-2">
-                      <View className="px-2 py-0.5 rounded" style={{ backgroundColor: getRecyclableColor(item.recyclability) + '33' }}>
-                        <Text className="text-xs font-medium" style={{ color: getRecyclableColor(item.recyclability) }}>{getRecyclableText(item.recyclability)}</Text>
+                <View key={item.id}>
+                  <TouchableOpacity 
+                    activeOpacity={0.9}
+                    className={`bg-white rounded-[32px] p-4 shadow-sm border ${selectedItem?.id === item.id ? 'border-emerald-500' : 'border-slate-50'}`}
+                    onPress={() => { Haptics.selectionAsync(); setSelectedItem(selectedItem?.id === item.id ? null : item); }}
+                  >
+                    <View className={`flex-row items-center ${item.isRecycled ? 'opacity-60' : ''}`}>
+                      <View className="relative">
+                        <Image source={{ uri: item.imageUrl }} className="w-20 h-20 rounded-[24px]" />
+                        <View 
+                          className="absolute -right-1 -bottom-1 w-6 h-6 rounded-full items-center justify-center border-2 border-white"
+                          style={{ backgroundColor: item.isRecycled ? '#059669' : getRecyclableColor(item.recyclability) }}
+                        >
+                          <Ionicons name={item.isRecycled ? 'checkmark-circle' : (item.recyclability === 'fully' ? 'leaf' : item.recyclability === 'partially' ? 'sync' : 'trash')} size={10} color="white" />
+                        </View>
                       </View>
-                      <Text className="text-xs text-textTertiary">{formatDate(item.scannedAt)}</Text>
+                      
+                      <View className="flex-1 ml-5">
+                        <Text className="text-lg font-poppins-bold text-slate-900 mb-1" numberOfLines={1}>{item.productName}</Text>
+                        <View className="flex-row items-center">
+                          {item.isRecycled ? (
+                            <View className="bg-emerald-100 px-2 py-0.5 rounded-md mr-2">
+                               <Text className="text-[9px] font-poppins-black text-emerald-700 uppercase">Recycled</Text>
+                            </View>
+                          ) : (
+                            <>
+                              <Text className="text-[11px] font-poppins-semibold text-slate-400 uppercase tracking-wider">{formatDate(item.scannedAt)}</Text>
+                              <View className="w-1 h-1 rounded-full bg-slate-300 mx-2" />
+                            </>
+                          )}
+                          <Text className="text-[11px] font-poppins-bold text-emerald-600 uppercase tracking-wider">{item.category}</Text>
+                        </View>
+                      </View>
+
+                      {!item.isRecycled && (
+                        <TouchableOpacity
+                          className={`w-12 h-12 rounded-full items-center justify-center ${item.inScannedCart ? 'bg-emerald-600' : 'bg-slate-50'}`}
+                          onPress={() => handleToggleCart(item.id)}
+                        >
+                          <Ionicons
+                            name={item.inScannedCart ? 'cart' : 'cart-outline'}
+                            size={20}
+                            color={item.inScannedCart ? 'white' : '#94A3B8'}
+                          />
+                        </TouchableOpacity>
+                      )}
                     </View>
-                  </View>
-                  <TouchableOpacity className={`w-9 h-9 rounded-full items-center justify-center border ${item.inScannedCart ? 'bg-primary border-primary' : 'bg-background border-border'}`} onPress={() => handleToggleCart(item.id)}>
-                    <Text className={`text-lg ${item.inScannedCart ? 'text-white' : 'text-textSecondary'}`}>{item.inScannedCart ? '✓' : '+'}</Text>
+
+                    {/* Expandable Details Area */}
+                    {selectedItem?.id === item.id && (
+                      <View className="mt-6 pt-6 border-t border-slate-50">
+                        <View className="flex-row justify-between mb-6">
+                           <View className="items-center">
+                            <View className="w-12 h-12 bg-emerald-50 rounded-2xl items-center justify-center mb-2">
+                              <Ionicons name="leaf" size={20} color="#059669" />
+                            </View>
+                            <Text className="text-lg font-poppins-black text-emerald-600">{item.carbonSaved}kg</Text>
+                            <Text className="text-[9px] font-poppins-bold text-slate-400 uppercase">CO₂ Saved</Text>
+                          </View>
+                          
+                          <View className="items-center">
+                            <View className="w-12 h-12 bg-blue-50 rounded-2xl items-center justify-center mb-2">
+                              <Ionicons name="water" size={20} color="#0284C7" />
+                            </View>
+                            <Text className="text-lg font-poppins-black text-blue-600">{item.waterSaved}L</Text>
+                            <Text className="text-[9px] font-poppins-bold text-slate-400 uppercase">Water</Text>
+                          </View>
+
+                          <View className="items-center">
+                            <View className="w-12 h-12 bg-amber-50 rounded-2xl items-center justify-center mb-2">
+                              <Ionicons name="flash" size={20} color="#D97706" />
+                            </View>
+                            <Text className="text-lg font-poppins-black text-amber-600">{item.energySaved}kWh</Text>
+                            <Text className="text-[9px] font-poppins-bold text-slate-400 uppercase">Energy</Text>
+                          </View>
+                        </View>
+
+                        <View className="bg-slate-50 rounded-3xl p-5 mb-6">
+                          <Text className="text-[10px] font-poppins-bold text-slate-400 uppercase tracking-widest mb-2">Expert Advice</Text>
+                          <Text className="text-sm font-poppins text-slate-600 leading-5 italic">"{item.recyclingTips}"</Text>
+                        </View>
+
+                        <View className="flex-row gap-3">
+                          <TouchableOpacity 
+                            className="flex-1 bg-slate-900 py-4 rounded-2xl items-center shadow-lg"
+                            onPress={() => router.push('/track-carbon')}
+                          >
+                            <Text className="text-white font-poppins-bold text-sm">Full Stats</Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity 
+                            className="w-14 h-14 bg-red-50 rounded-2xl items-center justify-center border border-red-100"
+                            onPress={() => handleRemoveItem(item.id, item.productName)}
+                          >
+                            <Ionicons name="trash-outline" size={20} color="#DC2626" />
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    )}
                   </TouchableOpacity>
-                </TouchableOpacity>
+                </View>
               ))}
             </View>
           )}
         </View>
 
-        {selectedItem && (
-          <View className="mb-6">
-            <Text className="text-lg font-semibold text-textPrimary mb-3">Item Details</Text>
-            <View className="bg-card rounded-2xl p-4">
-              <View className="flex-row mb-4">
-                <Image source={{ uri: selectedItem.imageUrl }} className="w-25 h-25 rounded-xl mr-4" />
-                <View className="flex-1">
-                  <Text className="text-xl font-bold text-textPrimary">{selectedItem.productName}</Text>
-                  {selectedItem.brand && <Text className="text-sm text-textSecondary mt-1">Brand: {selectedItem.brand}</Text>}
-                  <View className="mt-2 px-2 py-1 rounded" style={{ backgroundColor: getRecyclableColor(selectedItem.recyclability) + '33' }}>
-                    <Text className="text-xs font-medium" style={{ color: getRecyclableColor(selectedItem.recyclability) }}>{getRecyclableText(selectedItem.recyclability)}</Text>
-                  </View>
-                </View>
-              </View>
-
-              <View className="h-px bg-border my-4" />
-
-              <Text className="text-base font-semibold text-textPrimary mb-3">🌱 Environmental Impact</Text>
-              <View className="flex-row gap-3">
-                <View className="flex-1 bg-background rounded-xl p-3 items-center">
-                  <Text className="text-xl mb-1">🌍</Text>
-                  <Text className="text-lg font-bold text-primary">{selectedItem.savingsPercent}%</Text>
-                  <Text className="text-xs text-textSecondary">CO₂ Savings</Text>
-                </View>
-                <View className="flex-1 bg-background rounded-xl p-3 items-center">
-                  <Text className="text-xl mb-1">💧</Text>
-                  <Text className="text-lg font-bold text-blue-500">{selectedItem.waterSaved}L</Text>
-                  <Text className="text-xs text-textSecondary">Water Saved</Text>
-                </View>
-                <View className="flex-1 bg-background rounded-xl p-3 items-center">
-                  <Text className="text-xl mb-1">⚡</Text>
-                  <Text className="text-lg font-bold text-amber-500">{selectedItem.energySaved}kWh</Text>
-                  <Text className="text-xs text-textSecondary">Energy Saved</Text>
-                </View>
-              </View>
-
-              <View className="h-px bg-border my-4" />
-
-              <Text className="text-base font-semibold text-textPrimary mb-2">📦 Materials</Text>
-              <View className="flex-row flex-wrap gap-2 mb-2">
-                {selectedItem.materials.map((material, index) => (
-                  <View key={index} className="bg-primaryLight px-3 py-1 rounded-full">
-                    <Text className="text-xs text-primary">{material}</Text>
-                  </View>
-                ))}
-              </View>
-              <Text className="text-sm text-textSecondary">Category: {selectedItem.category}</Text>
-
-              <View className="h-px bg-border my-4" />
-
-              <Text className="text-base font-semibold text-textPrimary mb-2">💡 Recycling Tips</Text>
-              <Text className="text-sm text-textSecondary">{selectedItem.recyclingTips}</Text>
-
-              <View className="flex-row gap-3 mt-4">
-                <TouchableOpacity className="flex-1 bg-primary py-3 rounded-xl items-center" onPress={() => { handleToggleCart(selectedItem.id); Alert.alert('Added to Cart', `${selectedItem.productName} added to your scanned items cart`); }}>
-                  <Text className="text-base font-semibold text-white">{selectedItem.inScannedCart ? 'Remove from Cart' : 'Add to Cart'}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity className="bg-red-100 py-3 px-4 rounded-xl items-center border border-red-500" onPress={() => handleRemoveItem(selectedItem.id, selectedItem.productName)}>
-                  <Text className="text-base font-semibold text-red-600">Delete</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
+        {/* Global Action Footer */}
+        <View className="bg-emerald-600 rounded-[40px] p-8 shadow-2xl relative overflow-hidden">
+          <View className="absolute -right-10 -bottom-10 opacity-20">
+            <Ionicons name="planet" size={200} color="white" />
           </View>
-        )}
+          <Text className="text-white font-poppins-black text-2xl mb-2">Rewards Hub</Text>
+          <Text className="text-white/80 font-poppins text-sm mb-6">
+            Add items to your <Text className="font-poppins-bold text-white">Pickup Cart</Text> to earn Green Credits. You have <Text className="font-poppins-bold text-white">{scannedCartCount} items</Text> ready for collection!
+          </Text>
+          <TouchableOpacity 
+            className="bg-white py-4 px-8 rounded-full self-start shadow-xl shadow-emerald-900/20"
+            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push('/schedule-pickup'); }}
+          >
+            <Text className="text-emerald-700 font-poppins-bold">Schedule Pickup</Text>
+          </TouchableOpacity>
+        </View>
 
-        {getScannedCartItems().length > 0 && (
-          <View className="mb-6">
-            <Text className="text-lg font-semibold text-textPrimary mb-3">Scanned Items Cart ({getScannedCartItems().length})</Text>
-            <View className="bg-card rounded-2xl p-4">
-              {getScannedCartItems().map((item) => (
-                <View key={item.id} className="flex-row items-center py-3 border-b border-border">
-                  <Image source={{ uri: item.imageUrl }} className="w-12 h-12 rounded-lg mr-3" />
-                  <View className="flex-1">
-                    <Text className="text-sm font-medium text-textPrimary">{item.productName}</Text>
-                    <Text className="text-xs text-textSecondary">{item.estimatedWeight}g</Text>
-                  </View>
-                  <Text className="text-sm font-medium text-emerald-600">{item.carbonSaved} kg CO₂</Text>
-                </View>
-              ))}
-              <View className="pt-3 mt-2">
-                <Text className="text-sm text-textSecondary text-center">
-                  Total: {getScannedCartItems().reduce((sum, item) => sum + item.estimatedWeight, 0)}g | CO₂: {getScannedCartItems().reduce((sum, item) => sum + parseFloat(item.carbonSaved), 0).toFixed(2)} kg
-                </Text>
-              </View>
-            </View>
-          </View>
-        )}
-
-        <View className="h-24" />
+        <View className="h-40" />
       </ScrollView>
     </SafeAreaView>
   );

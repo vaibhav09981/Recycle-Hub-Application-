@@ -1,50 +1,75 @@
-# Welcome to your Expo app 👋
+# 🌍 RecycleHub 2.0 - Smart Sustainability Platform
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+RecycleHub 2.0 is a premium, AI-driven mobile application designed to gamify and simplify sustainable living. By combining advanced AI waste analysis with a verified recycling economy, we empower users to turn their waste into **Green Credits** and tangible rewards.
 
-## Get started
+![RecycleHub Banner](https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&q=80&w=2070)
 
-1. Install dependencies
+## ✨ Key Features
 
+### 🔍 AI Smart Scanner
+Powered by **Google Gemini 2.0 Flash**, our scanner identifies materials instantly and provides detailed recyclability reports.
+- **Material Detection**: Identifies plastics, metals, paper, and e-waste.
+- **Impact Metrics**: Calculates CO₂ savings, water preservation, and energy conservation for every item.
+
+### 📝 Eco Journal
+A digital log of your sustainability journey.
+- **Impact Tracking**: Monitor your lifetime environmental savings.
+- **Recycling Status**: Distinguish between logged items and those successfully recycled.
+- **Pickup Cart**: Queue items for home collection directly from your history.
+
+### 🚛 Verified Pickup Economy
+A robust, verification-based reward system.
+- **Home Collection**: Schedule doorstep pickups for your recyclables.
+- **Proof-of-Recycling**: Earn **Green Credits** only after physical collection is verified.
+- **Incremental Rewards**: Higher impact items earn more credits.
+
+### 🛍️ Eco Shop
+Redeem your hard-earned Green Credits for eco-friendly products and discounts.
+- **INR Localization**: Prices and rewards optimized for the Indian market.
+- **Premium Catalog**: Access sustainable daily appliances and home essentials.
+
+## 🛠️ Technology Stack
+
+- **Frontend**: [Expo](https://expo.dev/) (React Native)
+- **Styling**: [NativeWind](https://www.nativewind.dev/) (Tailwind CSS for Mobile)
+- **Database & Auth**: [Supabase](https://supabase.com/) (PostgreSQL)
+- **AI Engine**: [Google Gemini 2.0 Flash](https://ai.google.dev/)
+- **Animation**: [Lucide Icons](https://lucide.dev/) & [Haptics](https://docs.expo.dev/versions/latest/sdk/haptics/)
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Node.js (v18 or later)
+- Expo Go app on your mobile device
+
+### Installation
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/vaibhav09981/Recycle-Hub-Application-.git
+   cd Recycle-Hub-Application-
+   ```
+
+2. Install dependencies:
    ```bash
    npm install
    ```
 
-2. Start the app
+3. Configure Environment Variables:
+   Create a `.env` file in the root directory and add your credentials:
+   ```env
+   EXPO_PUBLIC_SUPABASE_URL=your_supabase_url
+   EXPO_PUBLIC_SUPABASE_ANON_KEY=your_supabase_key
+   EXPO_PUBLIC_GEMINI_API_KEY=your_gemini_key
+   ```
 
+4. Start the application:
    ```bash
    npx expo start
    ```
 
-In the output, you'll find options to open the app in a
+## 📈 Impact Goals
+RecycleHub aims to reduce landfill waste by 20% in urban communities by providing an accessible, rewarding, and transparent recycling infrastructure.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+---
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
-```
-
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Built with ❤️ for a Greener Planet.

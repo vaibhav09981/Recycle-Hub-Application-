@@ -264,3 +264,34 @@ SELECT
 FROM user_impact ui;
 
 GRANT SELECT ON user_dashboard TO authenticated;
+
+-- ============================================
+-- 6. PICKUPS TABLE
+-- Stores home collection requests
+-- ============================================
+CREATE TABLE IF NOT EXISTS pickups (
+  id BIGSERIAL PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  user_name VARCHAR(100) NOT NULL,
+  phone_number VARCHAR(20) NOT NULL,
+  apt_no VARCHAR(50),
+  street_no VARCHAR(100) NOT NULL,
+  city VARCHAR(100) NOT NULL,
+  state VARCHAR(100) NOT NULL,
+  waste_weight DECIMAL(10,2) NOT NULL, -- kg
+  waste_type TEXT NOT NULL, -- can be multiple items comma separated
+  status VARCHAR(20) DEFAULT 'pending', -- 'pending', 'scheduled', 'completed', 'cancelled'
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Enable RLS
+ALTER TABLE pickups ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view own pickups" ON pickups
+  FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own pickups" ON pickups
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+-- Note: To receive emails at vaibhavjj99@gmail.com, 
+-- you should set up a Supabase Edge Function triggered by this table.

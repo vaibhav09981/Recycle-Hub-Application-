@@ -1,7 +1,9 @@
 import { useAuth } from '@/context/AuthContext';
 import { Link, router } from 'expo-router';
 import React, { useState } from 'react';
-import { Alert, Image, KeyboardAvoidingView, Platform, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Image, KeyboardAvoidingView, Platform, Text, TextInput, TouchableOpacity, View, ScrollView } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 
 export default function SignupScreen() {
   const [name, setName] = useState('');
@@ -9,9 +11,11 @@ export default function SignupScreen() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { signUp } = useAuth();
 
   const handleSignup = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     if (!name || !email || !password || !confirmPassword) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
@@ -40,81 +44,126 @@ export default function SignupScreen() {
   };
 
   return (
-    <KeyboardAvoidingView className="flex-1 bg-background" behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-      <View className="flex-1 px-6">
-        <View className="pt-15 mb-5">
-          <Link href="/(auth)/login" asChild>
-            <TouchableOpacity className="py-2">
-              <Text className="text-base text-primary">← Back</Text>
-            </TouchableOpacity>
-          </Link>
-        </View>
-
-        <View className="items-center mb-6">
-          <Image source={require('@/assets/recyclehub_icon.png')} className="w-20 h-20 mb-2" resizeMode="contain" />
-          <View className="flex-row items-center mb-2">
-            <Text className="text-3xl font-bold text-primary">Recycle</Text>
-            <Text className="text-3xl font-bold text-black">Hub</Text>
-          </View>
-          <Text className="text-sm text-textSecondary text-center">Join RecycleHub and start recycling!</Text>
-        </View>
-
-        <View className="w-full">
-          <Text className="text-sm font-semibold text-textPrimary mb-2">Full Name</Text>
-          <TextInput
-            className="w-full p-4 rounded-xl border border-border bg-card text-base text-textPrimary mb-4"
-            placeholder="Enter your full name"
-            placeholderTextColor="#9CA3AF"
-            value={name}
-            onChangeText={setName}
-            autoCapitalize="words"
-          />
-
-          <Text className="text-sm font-semibold text-textPrimary mb-2">Email</Text>
-          <TextInput
-            className="w-full p-4 rounded-xl border border-border bg-card text-base text-textPrimary mb-4"
-            placeholder="Enter your email"
-            placeholderTextColor="#9CA3AF"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
-
-          <Text className="text-sm font-semibold text-textPrimary mb-2">Password</Text>
-          <TextInput
-            className="w-full p-4 rounded-xl border border-border bg-card text-base text-textPrimary mb-4"
-            placeholder="Create a password"
-            placeholderTextColor="#9CA3AF"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-          />
-
-          <Text className="text-sm font-semibold text-textPrimary mb-2">Confirm Password</Text>
-          <TextInput
-            className="w-full p-4 rounded-xl border border-border bg-card text-base text-textPrimary mb-4"
-            placeholder="Confirm your password"
-            placeholderTextColor="#9CA3AF"
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-            secureTextEntry
-          />
-
-          <TouchableOpacity className="w-full p-4 bg-primary rounded-xl items-center mt-2" onPress={handleSignup} disabled={loading}>
-            <Text className="text-base font-semibold text-white">{loading ? 'Creating Account...' : 'Sign Up'}</Text>
-          </TouchableOpacity>
-
-          <View className="flex-row justify-center mt-6 mb-8">
-            <Text className="text-sm text-textSecondary">Already have an account? </Text>
+    <KeyboardAvoidingView 
+      className="flex-1 bg-background" 
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+    >
+      <ScrollView 
+        contentContainerStyle={{ flexGrow: 1 }} 
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View className="flex-1 px-8 py-10">
+          <View className="mb-4">
             <Link href="/(auth)/login" asChild>
-              <TouchableOpacity>
-                <Text className="text-sm text-primary font-semibold">Login</Text>
+              <TouchableOpacity className="flex-row items-center py-2" onPress={() => Haptics.selectionAsync()}>
+                <Ionicons name="arrow-back" size={20} color="#10B981" />
+                <Text className="text-base text-primary font-bold font-poppins ml-1">Back</Text>
               </TouchableOpacity>
             </Link>
           </View>
+
+          <View className="items-center mb-10">
+            <View className="p-5 bg-white rounded-[32px] shadow-sm border border-slate-100 mb-6">
+              <Image 
+                source={require('@/assets/recyclehub_icon.png')} 
+                className="w-24 h-24" 
+                resizeMode="contain" 
+              />
+            </View>
+            <View className="flex-row items-center mb-1">
+              <Text className="text-3xl font-bold text-primary font-poppins">Recycle</Text>
+              <Text className="text-3xl font-bold text-textPrimary font-poppins">Hub</Text>
+            </View>
+            <Text className="text-sm text-textSecondary font-poppins text-center">Join the community helping the planet</Text>
+          </View>
+
+          <View className="w-full">
+            <View className="mb-4">
+              <Text className="text-[13px] font-semibold text-textPrimary mb-1 ml-1 font-poppins">Full Name</Text>
+              <View className="flex-row items-center bg-white border border-slate-200 rounded-2xl px-4 py-1 shadow-sm">
+                <Ionicons name="person-outline" size={18} color="#94A3B8" />
+                <TextInput
+                  className="flex-1 p-3 text-base text-textPrimary font-poppins"
+                  placeholder="John Doe"
+                  placeholderTextColor="#94A3B8"
+                  value={name}
+                  onChangeText={setName}
+                  autoCapitalize="words"
+                />
+              </View>
+            </View>
+
+            <View className="mb-4">
+              <Text className="text-[13px] font-semibold text-textPrimary mb-1 ml-1 font-poppins">Email Address</Text>
+              <View className="flex-row items-center bg-white border border-slate-200 rounded-2xl px-4 py-1 shadow-sm">
+                <Ionicons name="mail-outline" size={18} color="#94A3B8" />
+                <TextInput
+                  className="flex-1 p-3 text-base text-textPrimary font-poppins"
+                  placeholder="name@example.com"
+                  placeholderTextColor="#94A3B8"
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                />
+              </View>
+            </View>
+
+            <View className="mb-4">
+              <Text className="text-[13px] font-semibold text-textPrimary mb-1 ml-1 font-poppins">Password</Text>
+              <View className="flex-row items-center bg-white border border-slate-200 rounded-2xl px-4 py-1 shadow-sm">
+                <Ionicons name="lock-closed-outline" size={18} color="#94A3B8" />
+                <TextInput
+                  className="flex-1 p-3 text-base text-textPrimary font-poppins"
+                  placeholder="••••••••"
+                  placeholderTextColor="#94A3B8"
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry={!showPassword}
+                />
+              </View>
+            </View>
+
+            <View className="mb-6">
+              <Text className="text-[13px] font-semibold text-textPrimary mb-1 ml-1 font-poppins">Confirm Password</Text>
+              <View className="flex-row items-center bg-white border border-slate-200 rounded-2xl px-4 py-1 shadow-sm">
+                <Ionicons name="checkmark-circle-outline" size={18} color="#94A3B8" />
+                <TextInput
+                  className="flex-1 p-3 text-base text-textPrimary font-poppins"
+                  placeholder="••••••••"
+                  placeholderTextColor="#94A3B8"
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  secureTextEntry={!showPassword}
+                />
+                <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                  <Ionicons name={showPassword ? "eye-off-outline" : "eye-outline"} size={18} color="#94A3B8" />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <TouchableOpacity 
+              className="w-full p-4 bg-primary rounded-2xl items-center shadow-lg shadow-primary/20 mt-2" 
+              onPress={handleSignup} 
+              disabled={loading}
+              activeOpacity={0.8}
+            >
+              <Text className="text-lg font-bold text-white font-poppins">{loading ? 'Creating Account...' : 'Sign Up'}</Text>
+            </TouchableOpacity>
+
+            <View className="flex-row justify-center mt-8 mb-10">
+              <Text className="text-sm text-textSecondary font-poppins">Already have an account? </Text>
+              <Link href="/(auth)/login" asChild>
+                <TouchableOpacity onPress={() => Haptics.selectionAsync()}>
+                  <Text className="text-sm text-primary font-bold font-poppins">Login</Text>
+                </TouchableOpacity>
+              </Link>
+            </View>
+          </View>
         </View>
-      </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }

@@ -1,8 +1,10 @@
 import { useAuth } from '@/context/AuthContext';
 import { useJournal, ScannedItem } from '@/context/JournalContext';
 import { useRouter } from 'expo-router';
-import React, { useState, useMemo } from 'react';
-import { ScrollView, Text, TouchableOpacity, View, Animated } from 'react-native';
+import React, { useState, useMemo, useCallback } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { ScrollView, Text, TouchableOpacity, View, Animated, StatusBar } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface BadgeDefinition {
@@ -25,16 +27,16 @@ interface UserStats {
 }
 
 const badgeDefinitions: BadgeDefinition[] = [
-  { id: 'first-scan', name: 'First Scan', icon: '📸', description: 'Scan your first item', criteria: (s) => s.totalItemsScanned >= 1 },
-  { id: 'eco-warrior', name: 'Eco Warrior', icon: '🌍', description: 'Save 1kg CO₂', criteria: (s) => s.totalCo2Saved >= 1 },
-  { id: 'recycling-pro', name: 'Recycling Pro', icon: '♻️', description: 'Recycle 5 items', criteria: (s) => s.totalItemsRecycled >= 5 },
-  { id: 'water-saver', name: 'Water Saver', icon: '💧', description: 'Save 10L water', criteria: (s) => s.totalWaterSaved >= 10 },
-  { id: 'energy-hero', name: 'Energy Hero', icon: '⚡', description: 'Save 1kWh energy', criteria: (s) => s.totalEnergySaved >= 1 },
-  { id: 'green-champion', name: 'Green Champion', icon: '🏆', description: 'Earn 100 points', criteria: (s) => s.greenPoints >= 100 },
-  { id: 'consistent', name: 'Consistent', icon: '🔥', description: 'Scan 3 days in a row', criteria: (s) => s.consecutiveDays >= 3 },
-  { id: 'influencer', name: 'Influencer', icon: '🌟', description: 'Share 3 items', criteria: (s) => s.sharesCount >= 3 },
-  { id: 'master-recycler', name: 'Master Recycler', icon: '🌿', description: 'Recycle 20 items', criteria: (s) => s.totalItemsRecycled >= 20 },
-  { id: 'climate-hero', name: 'Climate Hero', icon: '🌎', description: 'Save 10kg CO₂', criteria: (s) => s.totalCo2Saved >= 10 },
+  { id: 'first-scan', name: 'First Scan', icon: 'scan', description: 'Scan your first item', criteria: (s) => s.totalItemsScanned >= 1 },
+  { id: 'eco-warrior', name: 'Eco Warrior', icon: 'globe', description: 'Save 1kg CO₂', criteria: (s) => s.totalCo2Saved >= 1 },
+  { id: 'recycling-pro', name: 'Recycling Pro', icon: 'refresh-circle', description: 'Recycle 5 items', criteria: (s) => s.totalItemsRecycled >= 5 },
+  { id: 'water-saver', name: 'Water Saver', icon: 'water', description: 'Save 10L water', criteria: (s) => s.totalWaterSaved >= 10 },
+  { id: 'energy-hero', name: 'Energy Hero', icon: 'flash', description: 'Save 1kWh energy', criteria: (s) => s.totalEnergySaved >= 1 },
+  { id: 'green-champion', name: 'Green Champion', icon: 'trophy', description: 'Earn 100 points', criteria: (s) => s.greenPoints >= 100 },
+  { id: 'consistent', name: 'Consistent', icon: 'flame', description: 'Scan 3 days in a row', criteria: (s) => s.consecutiveDays >= 3 },
+  { id: 'influencer', name: 'Influencer', icon: 'star', description: 'Share 3 items', criteria: (s) => s.sharesCount >= 3 },
+  { id: 'master-recycler', name: 'Master Recycler', icon: 'leaf', description: 'Recycle 20 items', criteria: (s) => s.totalItemsRecycled >= 20 },
+  { id: 'climate-hero', name: 'Climate Hero', icon: 'earth', description: 'Save 10kg CO₂', criteria: (s) => s.totalCo2Saved >= 10 },
 ];
 
 function ProgressRing({ progress, color, size = 80, strokeWidth = 8 }: { progress: number; color: string; size?: number; strokeWidth?: number }) {
@@ -155,10 +157,24 @@ export default function ProfileScreen() {
     nextLevelPoints: userStats.greenPoints >= 500 ? 1000 : userStats.greenPoints >= 200 ? 500 : userStats.greenPoints >= 50 ? 200 : 50,
   };
 
-  const recyclingRate = userImpact.totalItemsScanned > 0 ? ((userImpact.totalItemsRecycled / userImpact.totalItemsScanned) * 100).toFixed(0) : 0;
-  const badgesEarned = earnedBadges.filter(b => b.earned).length;
+  const recyclingRate = useMemo(
+    () => userImpact.totalItemsScanned > 0
+      ? ((userImpact.totalItemsRecycled / userImpact.totalItemsScanned) * 100).toFixed(0)
+      : 0,
+    [userImpact.totalItemsScanned, userImpact.totalItemsRecycled]
+  );
 
-  const formatDate = (dateString: string) => {
+  const badgesEarned = useMemo(
+    () => earnedBadges.filter(b => b.earned).length,
+    [earnedBadges]
+  );
+
+  const handleTabChange = useCallback((tab: 'impact' | 'badges' | 'history') => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setActiveTab(tab);
+  }, []);
+
+  const formatDate = useCallback((dateString: string) => {
     const date = new Date(dateString);
     const today = new Date();
     const yesterday = new Date(today);
@@ -166,156 +182,196 @@ export default function ProfileScreen() {
     if (date.toDateString() === today.toDateString()) return 'Today';
     if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  };
+  }, []);
+
+  const progressPercent = Math.min((userImpact.greenPoints / userImpact.nextLevelPoints) * 100, 100);
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
-      <View className="px-4 pt-4 pb-3 bg-card">
-        <Text className="text-2xl font-bold text-textPrimary font-poppins">My Impact</Text>
-      </View>
-
+    <SafeAreaView className="flex-1 bg-neutral-50" edges={['top']}>
+      <StatusBar barStyle="dark-content" />
+      
       <ScrollView showsVerticalScrollIndicator={false}>
-        <View className="bg-card px-4 pb-5 items-center">
-          <View className="items-center mb-3">
-            <View className="py-2 px-4 rounded-full bg-green-600 justify-center items-center border-2 border-black mb-3">
-              <Text className="text-4xl text-white font-bold">{session?.user?.email?.charAt(0).toUpperCase() || 'U'}</Text>
-            </View>
-            <View className="bg-black px-4 py-1 rounded-full">
-              <Text className="text-xs text-white font-semibold">{userImpact.level}</Text>
-            </View>
-          </View>
-
-          <Text className="text-xl font-bold text-textPrimary font-poppins mb-4">
-            {user?.name || session?.user?.email?.split('@')[0] || 'Eco Hero'}
-          </Text>
-
-          <View className="w-full bg-neutral-50 border border-black/10 rounded-xl p-4">
-            <View className="flex-row justify-between items-center mb-2.5">
-              <View className="flex-row items-center">
-                <Text className="text-xl mr-2">⭐</Text>
-                <Text className="text-2xl font-bold text-amber-500 font-poppins">{userImpact.greenPoints}</Text>
+        {/* Crazy Asymmetric Header */}
+        <View className="px-6 pt-10 pb-20 bg-emerald-600 rounded-b-[60px] relative overflow-hidden">
+          {/* Decorative floating circle */}
+          <View className="absolute -top-10 -left-10 w-40 h-40 bg-white/10 rounded-full" />
+          
+          <View className="flex-row items-center justify-between">
+            <View className="relative">
+              <View 
+                className="w-24 h-24 rounded-[30px] bg-white items-center justify-center shadow-xl border-2 border-emerald-400"
+                style={{ transform: [{ rotate: '5deg' }] }}
+              >
+                <Text 
+                  className="text-4xl text-emerald-600 font-bold"
+                  style={{ transform: [{ rotate: '-5deg' }] }}
+                >
+                  {session?.user?.email?.charAt(0).toUpperCase() || 'U'}
+                </Text>
               </View>
-              <Text className="text-sm text-black font-poppins">
-                {userImpact.nextLevelPoints - userImpact.greenPoints > 0 ? `${userImpact.nextLevelPoints - userImpact.greenPoints} points to next level` : 'Max level reached!'}
-              </Text>
+              {/* Level floating badge */}
+              <View 
+                className="absolute -top-3 -right-3 bg-white px-3 py-1 rounded-full border-2 border-emerald-600 shadow-md"
+                style={{ transform: [{ rotate: '-10deg' }] }}
+              >
+                <Text className="text-[10px] text-emerald-600 font-black">LVL {Math.floor(userImpact.greenPoints / 100) + 1}</Text>
+              </View>
             </View>
-            <View className="h-3 bg-border rounded-full overflow-hidden">
-              <View className="h-full bg-amber-500 rounded-full" style={{ width: `${Math.min((userImpact.greenPoints / userImpact.nextLevelPoints) * 100, 100)}%` }} />
+
+            <View className="flex-1 ml-6 items-start">
+              <Text className="text-3xl font-poppins-black text-white">
+                {user?.name || session?.user?.email?.split('@')[0] || 'Eco Hero'}
+              </Text>
+              <View className="bg-white/20 px-3 py-1 rounded-xl mt-1 self-start">
+                <Text className="text-[10px] text-white font-bold uppercase tracking-widest">{userImpact.level}</Text>
+              </View>
             </View>
           </View>
         </View>
 
-        <View className="flex-row px-4 py-3 bg-neutral-50 border-b border-black/10 gap-2">
-          {(['impact', 'badges', 'history'] as const).map((tab) => (
-            <TouchableOpacity key={tab} className={`flex-1 py-2.5 border border-black rounded-xl ${activeTab === tab ? 'bg-green-600' : 'bg-neutral-100'}`} onPress={() => setActiveTab(tab)} activeOpacity={0.8}>
-              <Text className={`text-sm font-medium text-center font-poppins ${activeTab === tab ? 'text-white' : 'text-black'}`}>
-                {tab === 'impact' ? '📊 Impact' : tab === 'badges' ? '🏅 Badges' : '📜 History'}
+        {/* Floating XP Tracker Card (Overlapping Header) */}
+        <View className="px-6 -mt-10">
+          <View className="bg-white rounded-[32px] p-6 shadow-xl shadow-emerald-900/10 border border-emerald-50">
+            <View className="flex-row items-center justify-between mb-4">
+               <View className="flex-row items-center">
+                  <Ionicons name="sparkles" size={16} color="#14B8A6" />
+                  <Text className="text-xs font-bold text-slate-400 ml-2 uppercase tracking-widest font-poppins">Level Growth</Text>
+               </View>
+               <Text className="text-lg font-poppins-black text-earth">{userImpact.greenPoints} GP</Text>
+            </View>
+            
+            <View className="h-6 bg-slate-50 rounded-2xl overflow-hidden border border-slate-100 p-1">
+              <View 
+                className="h-full bg-teal rounded-xl" 
+                style={{ width: `${progressPercent}%` }} 
+              />
+            </View>
+            <Text className="text-[10px] text-earth font-poppins mt-3 text-center font-bold">
+               {userImpact.nextLevelPoints - userImpact.greenPoints} GP to next rank
+            </Text>
+          </View>
+        </View>
+
+        {/* Philosophy Card - Asymmetric Design */}
+        <View className="px-6 mt-8">
+           <View className="bg-white border-2 border-earth rounded-[40px] rounded-tl-none p-8 shadow-sm relative">
+              <View 
+                className="absolute -top-10 right-0 bg-earth px-6 py-2 rounded-t-[20px]"
+                style={{ transform: [{ rotate: '2deg' }] }}
+              >
+                 <Text className="text-white text-[10px] font-black uppercase font-poppins">Our Ethos</Text>
+              </View>
+              <Ionicons name="chatbubble-outline" size={32} color="#78350F" className="opacity-20 absolute top-8 right-8" />
+              <Text className="text-earth text-lg font-bold font-poppins leading-7 italic pr-8">
+                "We never charge the user. We charge the brands, corporates, and municipalities who benefit from what the user does."
               </Text>
-            </TouchableOpacity>
-          ))}
+           </View>
+        </View>
+
+        {/* Crazy Grid Stats */}
+        <Text className="px-8 mt-10 text-[10px] font-black text-earth uppercase tracking-[4px] font-poppins mb-4 opacity-70">Impact Breakdown</Text>
+        
+        <View className="px-6 flex-row gap-4 mb-2">
+            <View className="flex-1 bg-white border border-slate-100 rounded-[30px] p-5 h-44 shadow-sm items-center justify-center">
+               <View className="w-12 h-12 bg-teal/10 rounded-2xl items-center justify-center mb-4">
+                  <Ionicons name="planet" size={24} color="#14B8A6" />
+               </View>
+               <Text className="text-4xl font-poppins-black text-teal">{userImpact.totalCo2Saved.toFixed(1)}</Text>
+               <Text className="text-[10px] text-slate-400 font-bold uppercase tracking-widest font-poppins">kg CO₂ Offset</Text>
+            </View>
+            
+            <View className="flex-1 gap-4">
+                <View className="bg-white border border-slate-100 rounded-[30px] p-4 flex-1 shadow-sm flex-row items-center">
+                  <View className="w-8 h-8 bg-teal/5 rounded-xl items-center justify-center mr-3">
+                    <Ionicons name="water" size={16} color="#14B8A6" />
+                  </View>
+                  <View>
+                    <Text className="text-2xl font-poppins-black text-teal">{userImpact.totalWaterSaved.toFixed(0)}L</Text>
+                    <Text className="text-[8px] text-slate-400 font-black uppercase">Conserved</Text>
+                  </View>
+                </View>
+                
+                <View className="bg-white border border-slate-100 rounded-[30px] p-4 flex-1 shadow-sm flex-row items-center">
+                  <View className="w-8 h-8 bg-earth/5 rounded-xl items-center justify-center mr-3">
+                    <Ionicons name="flash" size={16} color="#78350F" />
+                  </View>
+                  <View>
+                     <Text className="text-2xl font-poppins-black text-earth">{userImpact.totalEnergySaved.toFixed(1)}kWh</Text>
+                     <Text className="text-[8px] text-slate-400 font-black uppercase">Energy Saved</Text>
+                  </View>
+                </View>
+            </View>
+        </View>
+
+        {/* Redesigned Tab Selector */}
+        <View className="px-6 py-6">
+          <View className="flex-row gap-2">
+            {(['impact', 'badges', 'history'] as const).map((tab) => (
+              <TouchableOpacity 
+                key={tab} 
+                className={`flex-1 py-3.5 rounded-2xl border-2 ${activeTab === tab ? 'bg-emerald-600 border-emerald-600' : 'bg-transparent border-slate-100'}`} 
+                onPress={() => handleTabChange(tab)}
+                activeOpacity={0.8}
+              >
+                <Text className={`text-xs font-black text-center font-poppins uppercase tracking-widest ${activeTab === tab ? 'text-white' : 'text-slate-400'}`}>
+                  {tab}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
 
         {activeTab === 'impact' && (
-          <View className="px-4 pt-4">
-            <Text className="text-lg font-semibold text-textPrimary font-poppins mb-3">🌱 Environmental Impact</Text>
-            <View className="flex-row flex-wrap gap-3">
-              <View className="w-[48%] bg-card rounded-2xl p-4 items-center shadow-sm">
-                <View className="w-12 h-12 rounded-xl bg-primaryLight items-center justify-center mb-3"><Text className="text-2xl">🌍</Text></View>
-                <Text className="text-xl font-bold text-primary font-poppins">{userImpact.totalCo2Saved.toFixed(1)} kg</Text>
-                <Text className="text-xs text-textSecondary font-poppins">CO₂ Saved</Text>
+           <View className="px-6 mb-10">
+              <View className="bg-white border border-slate-100 rounded-[40px] p-8 shadow-sm">
+                 <View className="flex-row items-center justify-between mb-8">
+                    <Text className="text-lg font-bold text-slate-900 font-poppins">Monthly Velocity</Text>
+                    <View className="h-2 w-10 bg-emerald-600 rounded-full" />
+                 </View>
+                 
+                 <View className="flex-row items-end justify-between h-32 px-2">
+                    {monthlyData.map((data, index) => {
+                      const maxCo2 = Math.max(...monthlyData.map(d => d.co2Saved), 1);
+                      const height = (data.co2Saved / maxCo2) * 100;
+                      return (
+                        <View key={index} className="items-center flex-1">
+                          <View 
+                            className="w-4 rounded-full" 
+                            style={{ height: Math.max(height, 6), backgroundColor: data.co2Saved > 0.1 ? '#10B981' : '#F1F5F9' }} 
+                          />
+                          <Text className="text-[8px] text-slate-400 font-black mt-3 font-poppins">{data.month}</Text>
+                        </View>
+                      );
+                    })}
+                 </View>
               </View>
-              <View className="w-[48%] bg-card rounded-2xl p-4 items-center shadow-sm">
-                <View className="w-12 h-12 rounded-xl bg-blue-50 items-center justify-center mb-3"><Text className="text-2xl">💧</Text></View>
-                <Text className="text-xl font-bold text-blue-500 font-poppins">{userImpact.totalWaterSaved.toFixed(0)}L</Text>
-                <Text className="text-xs text-textSecondary font-poppins">Water Saved</Text>
+              
+              <View className="mt-6 flex-row gap-4">
+                  <View className="flex-1 bg-white border border-slate-100 rounded-[30px] p-5 shadow-sm">
+                      <Text className="text-slate-400 text-[10px] font-black uppercase mb-2">Items Diverted</Text>
+                      <Text className="text-2xl font-black text-emerald-600 font-poppins">{userImpact.totalItemsRecycled}</Text>
+                  </View>
+                  <View className="flex-1 bg-white border border-slate-100 rounded-[30px] p-5 shadow-sm">
+                      <Text className="text-slate-400 text-[10px] font-black uppercase mb-2">Impact Velocity</Text>
+                      <Text className="text-2xl font-black text-emerald-600 font-poppins">{recyclingRate}%</Text>
+                  </View>
               </View>
-              <View className="w-[48%] bg-card rounded-2xl p-4 items-center shadow-sm">
-                <View className="w-12 h-12 rounded-xl bg-amber-100 items-center justify-center mb-3"><Text className="text-2xl">⚡</Text></View>
-                <Text className="text-xl font-bold text-amber-500 font-poppins">{userImpact.totalEnergySaved.toFixed(1)}kWh</Text>
-                <Text className="text-xs text-textSecondary font-poppins">Energy Saved</Text>
-              </View>
-              <View className="w-[48%] bg-card rounded-2xl p-4 items-center shadow-sm">
-                <View className="w-12 h-12 rounded-xl bg-primaryLight items-center justify-center mb-3"><Text className="text-2xl">♻️</Text></View>
-                <Text className="text-xl font-bold text-primary font-poppins">{userImpact.totalItemsRecycled}</Text>
-                <Text className="text-xs text-textSecondary font-poppins">Items Recycled</Text>
-              </View>
-            </View>
-
-            <Text className="text-lg font-semibold text-textPrimary font-poppins mt-6 mb-3">📈 Progress</Text>
-            <View className="flex-row gap-4">
-              <View className="flex-1 bg-card rounded-2xl p-4 items-center shadow-sm">
-                <ProgressRing progress={parseFloat(recyclingRate as string)} color="#10B981" />
-                <Text className="text-sm font-semibold text-textPrimary font-poppins mt-2">Recycling Rate</Text>
-                <Text className="text-xs text-textSecondary">{recyclingRate}% recycled</Text>
-              </View>
-              <View className="flex-1 bg-card rounded-2xl p-4 items-center shadow-sm">
-                <ProgressRing progress={parseFloat(((badgesEarned / badgeDefinitions.length) * 100).toFixed(0))} color="#F59E0B" />
-                <Text className="text-sm font-semibold text-textPrimary font-poppins mt-2">Badges Earned</Text>
-                <Text className="text-xs text-textSecondary">{badgesEarned}/{badgeDefinitions.length}</Text>
-              </View>
-            </View>
-
-            <View className="bg-card rounded-2xl p-4 mt-4 shadow-sm">
-              <Text className="text-base font-semibold text-textPrimary font-poppins mb-4">CO₂ Saved This Year</Text>
-              <View className="flex-row items-end justify-between h-24 px-2">
-                {monthlyData.map((data, index) => {
-                  const maxCo2 = Math.max(...monthlyData.map(d => d.co2Saved), 1);
-                  const height = (data.co2Saved / maxCo2) * 80;
-                  return (
-                    <View key={index} className="items-center flex-1">
-                      <Text className="text-[10px] text-textSecondary mb-1">{data.co2Saved > 0.1 ? `${data.co2Saved.toFixed(1)}kg` : ''}</Text>
-                      <View className="w-4 rounded-t-sm" style={{ height: Math.max(height, 4), backgroundColor: data.co2Saved > 0.1 ? '#10B981' : '#E5E7EB' }} />
-                      <Text className="text-xs text-textSecondary mt-1">{data.month}</Text>
-                    </View>
-                  );
-                })}
-              </View>
-            </View>
-
-            <View className="bg-card rounded-2xl mt-4 shadow-sm">
-              <View className="flex-row justify-between items-center p-4">
-                <Text className="text-sm text-textSecondary font-poppins">Total Items Scanned</Text>
-                <Text className="text-base font-semibold text-textPrimary">{userImpact.totalItemsScanned}</Text>
-              </View>
-              <View className="h-px bg-border" />
-              <View className="flex-row justify-between items-center p-4">
-                <Text className="text-sm text-textSecondary font-poppins">Recycling Rate</Text>
-                <Text className="text-base font-semibold text-primary">{recyclingRate}%</Text>
-              </View>
-              <View className="h-px bg-border" />
-              <View className="flex-row justify-between items-center p-4">
-                <Text className="text-sm text-textSecondary font-poppins">Badges Earned</Text>
-                <Text className="text-base font-semibold text-warning">{badgesEarned}/{badgeDefinitions.length}</Text>
-              </View>
-              <View className="h-px bg-border" />
-              <View className="flex-row justify-between items-center p-4">
-                <Text className="text-sm text-textSecondary font-poppins">Cart Items</Text>
-                <Text className="text-base font-semibold text-info">{scannedCartCount}</Text>
-              </View>
-            </View>
-          </View>
+           </View>
         )}
 
         {activeTab === 'badges' && (
-          <View className="px-4 pt-4">
-            <Text className="text-lg font-semibold text-textPrimary font-poppins mb-3">🏅 Your Badges</Text>
-            <View className="bg-card rounded-xl p-4 mb-4">
-              <Text className="text-sm font-semibold text-textPrimary mb-3">Progress: {badgesEarned} / {badgeDefinitions.length} badges</Text>
-              <View className="h-2 bg-border rounded-full overflow-hidden">
-                <View className="h-full bg-primary rounded-full" style={{ width: `${(badgesEarned / badgeDefinitions.length) * 100}%` }} />
-              </View>
-            </View>
-            <View className="flex-row flex-wrap gap-3">
+          <View className="px-6 pt-4 mb-10">
+            <View className="flex-row flex-wrap justify-between gap-y-4">
               {earnedBadges.map((badge) => (
-                <View key={badge.id} className={`w-[47%] bg-card rounded-2xl p-4 items-center ${!badge.earned && 'opacity-60'}`}>
-                  <View className="w-14 h-14 rounded-full bg-primaryLight items-center justify-center mb-3">
-                    <Text className="text-3xl">{badge.earned ? badge.icon : '🔒'}</Text>
+                <View key={badge.id} className={`w-[48%] bg-white border border-slate-100 rounded-[32px] p-6 items-center ${!badge.earned && 'opacity-40'}`}>
+                  <View className={`w-14 h-14 rounded-2xl items-center justify-center mb-4 ${badge.earned ? 'bg-emerald-100' : 'bg-slate-100'}`}>
+                    {badge.earned
+                      ? <Ionicons name={badge.icon as any} size={28} color="#059669" />
+                      : <Ionicons name="lock-closed" size={24} color="#9CA3AF" />
+                    }
                   </View>
-                  <Text className="text-sm font-semibold text-textPrimary text-center font-poppins mb-1">{badge.name}</Text>
-                  <Text className="text-xs text-textSecondary text-center font-poppins mb-2">{badge.description}</Text>
-                  {badge.earned && badge.earnedDate && (
-                    <Text className="text-[10px] text-primary font-medium">Earned {formatDate(badge.earnedDate)}</Text>
-                  )}
+                  <Text className={`text-[10px] font-black text-center font-poppins uppercase tracking-wider ${badge.earned ? 'text-slate-900' : 'text-slate-400'}`}>{badge.name}</Text>
+                  <Text className="text-[9px] text-slate-400 font-poppins text-center mt-1">{badge.description}</Text>
                 </View>
               ))}
             </View>
@@ -323,59 +379,48 @@ export default function ProfileScreen() {
         )}
 
         {activeTab === 'history' && (
-          <View className="px-4 pt-4">
-            <Text className="text-lg font-semibold text-textPrimary font-poppins mb-3">📜 Scan History</Text>
-            {scannedItems.length === 0 ? (
-              <View className="bg-card rounded-2xl p-10 items-center">
-                <Text className="text-5xl mb-4">📋</Text>
-                <Text className="text-lg font-semibold text-textPrimary font-poppins mb-2">No scans yet</Text>
-                <Text className="text-sm text-textSecondary font-poppins text-center mb-6">Start scanning items to build your history</Text>
-                <TouchableOpacity className="bg-primary px-8 py-3 rounded-lg" onPress={() => router.push('/scan')}>
-                  <Text className="text-base font-semibold text-white font-poppins">Scan Now</Text>
-                </TouchableOpacity>
-              </View>
-            ) : (
-              <View className="gap-3">
-                {scannedItems.map((item) => (
-                  <View key={item.id} className="flex-row items-center bg-card rounded-xl p-3">
-                    <View className="w-11 h-11 rounded-full bg-primaryLight items-center justify-center mr-3">
-                      <Text className="text-xl">{item.recyclability === 'fully' ? '♻️' : item.recyclability === 'partially' ? '⚠️' : '❌'}</Text>
-                    </View>
-                    <View className="flex-1">
-                      <Text className="text-sm font-semibold text-textPrimary font-poppins">{item.productName}</Text>
-                      <Text className="text-xs text-textSecondary font-poppins">{formatDate(item.scannedAt)}</Text>
-                    </View>
-                    <View className="bg-primaryLight px-2.5 py-1 rounded-lg">
-                      <Text className="text-xs font-semibold text-primary">+{item.savingsPercent}%</Text>
-                    </View>
+          <View className="px-6 mb-10">
+              {scannedItems.length === 0 ? (
+                <View className="bg-white border border-slate-100 rounded-[40px] p-12 items-center">
+                  <View className="w-16 h-16 bg-slate-50 rounded-full items-center justify-center mb-6">
+                    <Ionicons name="search-outline" size={28} color="#CBD5E1" />
                   </View>
-                ))}
-              </View>
-            )}
+                  <Text className="text-sm font-bold text-slate-400 font-poppins text-center">No impact history yet.</Text>
+                </View>
+              ) : (
+                <View className="space-y-4">
+                  {scannedItems.map((item) => (
+                    <View key={item.id} className="flex-row items-center bg-white border border-slate-100 rounded-2xl p-4">
+                      <View className="w-10 h-10 rounded-xl bg-emerald-50 items-center justify-center mr-4">
+                        <Ionicons 
+                          name={item.recyclability === 'fully' ? 'checkmark-circle' : 'warning'} 
+                          size={20} 
+                          color={item.recyclability === 'fully' ? '#10B981' : '#F59E0B'} 
+                        />
+                      </View>
+                      <View className="flex-1">
+                        <Text className="text-sm font-bold text-slate-900 font-poppins">{item.productName}</Text>
+                        <Text className="text-[9px] text-slate-400 font-black uppercase tracking-widest">{formatDate(item.scannedAt)}</Text>
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              )}
           </View>
         )}
 
-        <View className="px-4 pt-6 pb-8">
-  {user || session ? (
-    <TouchableOpacity
-      className="bg-red-500 py-3.5 rounded-xl items-center border-2 border-black"
-      onPress={handleLogout}
-      activeOpacity={0.8}
-    >
-      <Text className="text-base font-semibold text-white">Logout</Text>
-    </TouchableOpacity>
-  ) : (
-    <View className="flex-row justify-between gap-3">
-      <TouchableOpacity
-        className="flex-1 bg-green-600 border-2 border-black py-3.5 rounded-xl items-center"
-        onPress={() => router.push('/(auth)/login')}
-        activeOpacity={0.8}
-      >
-        <Text className="text-base font-semibold text-white">Login/Signup</Text>
-      </TouchableOpacity>
-    </View>
-  )}
-</View>
+        <View className="px-6 mt-10">
+          <TouchableOpacity
+            className="w-full h-16 bg-red-50 border-2 border-red-500 rounded-[30px] items-center justify-center flex-row"
+            onPress={handleLogout}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="power" size={18} color="#EF4444" />
+            <Text className="text-sm font-black text-red-500 uppercase tracking-widest font-poppins ml-3">End Session</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View className="h-40" />
       </ScrollView>
     </SafeAreaView>
   );

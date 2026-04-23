@@ -3,6 +3,7 @@ import { ScrollView, Text, TouchableOpacity, View, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useCart } from '@/context/CartContext';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function CartScreen() {
   const router = useRouter();
@@ -16,8 +17,8 @@ export default function CartScreen() {
         </View>
 
         <View className="flex-1 justify-center items-center px-8">
-          <View className="w-30 h-30 rounded-full bg-primaryLight items-center justify-center mb-6">
-            <Text className="text-5xl">🛒</Text>
+          <View className="w-24 h-24 rounded-full bg-primaryLight items-center justify-center mb-6">
+            <Ionicons name="cart-outline" size={48} color="#10B981" />
           </View>
           <Text className="text-xl font-semibold text-textPrimary font-poppins mb-2">Your cart is empty</Text>
           <Text className="text-sm text-textSecondary font-poppins text-center mb-6 leading-5">
@@ -48,7 +49,7 @@ export default function CartScreen() {
             <View className="flex-1 justify-center">
               <Text className="text-xs text-primary font-poppins mb-1 font-medium uppercase tracking-wide">{item.category || 'Product'}</Text>
               <Text className="text-base font-semibold text-textPrimary font-poppins mb-1">{item.name}</Text>
-              <Text className="text-sm text-textSecondary font-poppins mb-2.5">${item.price.toFixed(2)}</Text>
+              <Text className="text-sm text-textSecondary font-poppins mb-2.5">₹{item.price.toFixed(0)}</Text>
 
               <View className="flex-row items-center justify-between">
                 <View className="flex-row items-center bg-background rounded-lg p-1">
@@ -61,8 +62,8 @@ export default function CartScreen() {
                   </TouchableOpacity>
                 </View>
 
-                <TouchableOpacity className="p-1.5" onPress={() => removeFromCart(item.id)} activeOpacity={0.8}>
-                  <Text className="text-lg">🗑️</Text>
+                <TouchableOpacity className="w-8 h-8 rounded-lg bg-red-50 items-center justify-center border border-red-100" onPress={() => removeFromCart(item.id)} activeOpacity={0.8}>
+                  <Ionicons name="trash-outline" size={16} color="#EF4444" />
                 </TouchableOpacity>
               </View>
             </View>
@@ -76,7 +77,7 @@ export default function CartScreen() {
           
           <View className="flex-row justify-between items-center mb-2.5">
             <Text className="text-sm text-textSecondary font-poppins">Subtotal</Text>
-            <Text className="text-sm font-medium text-textPrimary font-poppins">${cartTotal.toFixed(2)}</Text>
+            <Text className="text-sm font-medium text-textPrimary font-poppins">₹{cartTotal.toFixed(0)}</Text>
           </View>
           
           <View className="flex-row justify-between items-center mb-2.5">
@@ -88,13 +89,18 @@ export default function CartScreen() {
           
           <View className="flex-row justify-between items-center">
             <Text className="text-base font-semibold text-textPrimary font-poppins">Total</Text>
-            <Text className="text-xl font-bold text-primary font-poppins">${cartTotal.toFixed(2)}</Text>
+            <Text className="text-xl font-bold text-primary font-poppins">₹{cartTotal.toFixed(0)}</Text>
           </View>
         </View>
 
-        <View className="bg-primaryLight rounded-xl p-3.5 mb-3">
-          <Text className="text-sm font-semibold text-primaryDark font-poppins mb-1.5">🌱 Your Eco Impact</Text>
-          <Text className="text-xs text-textSecondary font-poppins leading-[18px]">By ordering these eco-friendly products, you&apos;re helping reduce plastic waste!</Text>
+        <View className="bg-primaryLight rounded-xl p-3.5 mb-3 flex-row items-center">
+          <View className="w-8 h-8 bg-primary/10 rounded-lg items-center justify-center mr-3">
+            <Ionicons name="leaf" size={16} color="#10B981" />
+          </View>
+          <View className="flex-1">
+            <Text className="text-sm font-semibold text-primaryDark font-poppins mb-0.5">Your Eco Impact</Text>
+            <Text className="text-xs text-textSecondary font-poppins leading-[18px]">By ordering these eco-friendly products, you're helping reduce plastic waste!</Text>
+          </View>
         </View>
 
         <TouchableOpacity className="bg-primary rounded-xl py-4 items-center shadow-lg shadow-primary/40 mb-3" onPress={() => console.log('Checkout pressed')} activeOpacity={0.9}>
